@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization")
 }
 
 repositories {
@@ -30,7 +29,7 @@ kotlin {
     }
 
     sourceSets.commonMain.dependencies {
-        api(project(":libs:stdlib"))
+        api(project(":common:types"))
         api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     }
 }

@@ -29,8 +29,11 @@ include("play") {
 
 include("presentation") {
     "types"()
+    "result"()
+    "input"()
     "api" {
         "krpc"()
+        "krpc-impl"()
     }
 }
 
