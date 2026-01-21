@@ -1,12 +1,11 @@
 package domain.service
 
+import backend.core.input.InputPostContent
 import backend.core.reference.PostReference
 import backend.core.reference.UserReference
 import backend.core.types.Post
 import backend.core.types.PostId
 import domain.selector.MainSelector
-import domain.service.input.InputPostContent
-import domain.service.input.map
 import domain.service.result.CreatePostError
 import domain.service.result.CreatePostResult
 import domain.service.result.map
@@ -34,7 +33,8 @@ class PostService @InterfaceClass constructor(
         replyTo: PostReference?,
         content: InputPostContent,
     ): CreatePostResult {
-        val inputContent = content.map()
+        val inputContent = content.map(selector)
+            ?: return CreatePostError.InvalidInputContent.asError()
 
         val authorId = selector.select(author)
             ?: return CreatePostError.UnknownAuthorReference.asError()
@@ -62,3 +62,19 @@ class PostService @InterfaceClass constructor(
     }
 }
 
+// todo assemble layer?
+private suspend fun InputPostContent.map(
+    selector: MainSelector,
+): integration.repository.input.InputPostContent? {
+    return when (this) {
+        is InputPostContent.Standalone -> {
+            integration.repository.input.InputPostContent.Standalone(text)
+        }
+
+        is InputPostContent.Repost -> {
+            val original = selector.select(original)
+                ?: return null
+            integration.repository.input.InputPostContent.Repost(comment, original)
+        }
+    }
+}

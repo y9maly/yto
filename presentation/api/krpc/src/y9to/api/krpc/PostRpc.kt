@@ -16,6 +16,10 @@ interface PostRpc {
         content: InputPostContent,
     ): CreatePostResult
 
-    suspend fun spliceGlobal(token: Token, key: SpliceKey<Unit>, limit: Int): Slice<Post>
+    suspend fun spliceGlobal(
+        token: Token,
+        key: SpliceKey<Unit> = SpliceKey.Initialize(Unit),
+        limit: Int
+    ): Slice<Post>
 }
 

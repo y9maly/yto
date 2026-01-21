@@ -10,7 +10,7 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":backend:domain:service-impl"))
-    api(project(":backend:domain:selector-impl"))
+    api(project(":backend:integration:selector-impl"))
     api(project(":backend:integration:data:repository-postgres"))
     api(project(":backend:infrastructure:postgres"))
 

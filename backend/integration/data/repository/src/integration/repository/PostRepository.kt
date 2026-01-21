@@ -59,7 +59,7 @@ class PostRepository internal constructor(private val main: MainRepository) {
             return@transaction SelectAuthorPostError.UnknownAuthorId.asError()
         val row = VPost.selectAll()
             .where { VPost.author_id eq author.long }
-            .orderBy(VPost.created_at to SortOrder.DESC)
+            .orderBy(VPost.created_at to SortOrder.ASC)
             .limit(1)
             .firstOrNull()
             ?: return@transaction SelectAuthorPostError.AuthorHasNoPosts.asError()
@@ -72,7 +72,7 @@ class PostRepository internal constructor(private val main: MainRepository) {
             return@transaction SelectAuthorPostError.UnknownAuthorId.asError()
         val row = VPost.selectAll()
             .where { VPost.author_id eq author.long }
-            .orderBy(VPost.created_at to SortOrder.ASC)
+            .orderBy(VPost.created_at to SortOrder.DESC)
             .limit(1)
             .firstOrNull()
             ?: return@transaction SelectAuthorPostError.AuthorHasNoPosts.asError()
@@ -83,6 +83,24 @@ class PostRepository internal constructor(private val main: MainRepository) {
     suspend fun selectRandomPost(): Post? = main.transaction(ReadOnly) {
         val row = VPost.selectAll()
             .orderBy(RandomFunction() to SortOrder.ASC)
+            .limit(1)
+            .firstOrNull()
+            ?: return@transaction null
+        fromViewPost(row)
+    }
+
+    suspend fun selectFirstPost(): Post? = main.transaction(ReadOnly) {
+        val row = VPost.selectAll()
+            .orderBy(VPost.created_at to SortOrder.ASC)
+            .limit(1)
+            .firstOrNull()
+            ?: return@transaction null
+        fromViewPost(row)
+    }
+
+    suspend fun selectLastPost(): Post? = main.transaction(ReadOnly) {
+        val row = VPost.selectAll()
+            .orderBy(VPost.created_at to SortOrder.DESC)
             .limit(1)
             .firstOrNull()
             ?: return@transaction null

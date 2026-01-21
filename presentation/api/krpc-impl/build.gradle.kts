@@ -1,6 +1,3 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
     kotlin("jvm")
     id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
@@ -11,7 +8,15 @@ repositories {
 }
 
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
+kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 
 dependencies {
+    api(project(":backend:domain:service"))
     api(project(":presentation:api:krpc"))
+    api(project(":presentation:integration:assembler"))
+    api(project(":presentation:integration:presenter"))
+    api(project(":presentation:integration:authenticator"))
+    api(project(":presentation:integration:referenceResolver"))
+
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
 }

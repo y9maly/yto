@@ -5,6 +5,7 @@ package y9to.libs.stdlib
 
 
 data class Slice<out T>(val list: List<T>, val nextPagingKey: PagingKey?)
+data class Slice2D<out T>(val previousPagingKey: PagingKey?, val list: List<T>, val nextPagingKey: PagingKey?)
 
 
 sealed interface SpliceKey<out PAGING_OPTIONS> {

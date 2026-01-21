@@ -25,6 +25,7 @@ q[0][c+1];dfs(c,f);c=q[2][c]!!.hashCode()}};dfs(0, ":${q[0][1]}")}}.also { print
 include("play") {
     "repository"()
     "service"()
+    "api"()
 }
 
 include("presentation") {
@@ -35,6 +36,15 @@ include("presentation") {
         "krpc"()
         "krpc-impl"()
     }
+    "integration" {
+        "callContext"()
+        "authenticator"()
+        "authenticator-silly"()
+        "referenceResolver"()
+        "assembler"()
+        "presenter"()
+        "assembler-presenter-impl"()
+    }
 }
 
 include("backend") {
@@ -42,14 +52,13 @@ include("backend") {
 
     "types"()
     "reference"()
+    "input"()
 
     // Domain
 
     "domain" {
         "service"()
         "service-impl"()
-        "selector"()
-        "selector-impl"()
     }
 
     // Integration   (maybe Data idk, its not data only, its like domain-spi more)
@@ -63,8 +72,11 @@ include("backend") {
             "keyValueCache"()
             "keyValueCache-redis"()
         }
+        "thirdpartyOnlineStatus"()
         "notificationService"()
         "notificationService-firebase"()
+        "selector"()
+        "selector-impl"()
     }
 
     // Infrastructure

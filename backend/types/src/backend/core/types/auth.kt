@@ -13,6 +13,7 @@ sealed interface AuthState {
     data class Authorized(val id: AuthorizableId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id
+    fun userIdOrNull() = (this as? Authorized)?.id as? UserId?
 }
 
 

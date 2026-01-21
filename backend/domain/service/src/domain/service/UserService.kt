@@ -27,6 +27,7 @@ class UserService @InterfaceClass constructor(
         return repo.user.select(id)
     }
 
+    suspend fun exists(id: UserId) = exists(UserReference.Id(id))
     suspend fun exists(ref: UserReference): Boolean {
         val id = selector.select(ref) ?: return false
         return repo.user.exists(id)

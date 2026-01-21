@@ -14,7 +14,7 @@ typealias LogOutOk = Unit
 
 @s sealed interface LogInError {
     @s data object UserForSpecifiedAuthMethodNotFound : LogInError
-    @s data object AlreadyAuthorized : LogInError
+    @s data object AlreadyLogInned : LogInError
 }
 
 @s sealed interface LogOutError {

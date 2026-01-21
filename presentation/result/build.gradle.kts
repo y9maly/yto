@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
+    kotlin("plugin.serialization")
 }
 
 repositories {
@@ -32,6 +33,8 @@ kotlin {
         api(project(":presentation:input"))
         api(project(":presentation:types"))
         api(project(":common:types"))
+
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
         api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
     }
 }
