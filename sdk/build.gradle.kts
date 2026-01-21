@@ -3,7 +3,7 @@ import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 
 plugins {
     kotlin("multiplatform")
-    kotlin("plugin.serialization")
+    id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
 }
 
 repositories {
@@ -31,8 +31,10 @@ kotlin {
 
     sourceSets.commonMain.dependencies {
         api(project(":presentation:types"))
-        api(project(":common:types"))
-        api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+        api(project(":presentation:input"))
+        api(project(":presentation:result"))
+        api(project(":presentation:api:krpc"))
+
+        api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     }
 }

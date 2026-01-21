@@ -1,17 +1,37 @@
 package y9to.api.types
 
+import kotlinx.serialization.Contextual
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.serializer
 import y9to.common.types.Birthday
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
 
 
 // todo -> UserAccessHash/Ref
-@JvmInline
-value class UserId(val long: Long) : AuthorizableId
+/**
+ * Почему это data class?
+ *
+ * ```Kotlin
+ * @Serializable
+ * sealed interface A
+ *
+ * @Serializable
+ * @JvmInline
+ * value class B(val int: Int) : A
+ *
+ * Json.encodeToString(serializer<A>(), B(123))
+ * ```
+ *
+ * Котлин дебил и сериализует это как "123", и очевидно падает при десериализации этого.
+ */
+@Serializable
+data class UserId(val long: Long) : AuthorizableId
 
+@Serializable
 data class User(
     val id: UserId,
-    val registrationDate: Instant,
+    val registrationDate: @Contextual Instant,
     val firstName: String,
 //    val avatar: AnyContentId?,
 //    val header: AnyContentId?,
@@ -22,6 +42,7 @@ data class User(
     val birthday: Birthday?,
 )
 
+@Serializable
 data class UserPreview(
     val id: UserId,
     val firstName: String,

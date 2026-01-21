@@ -26,12 +26,24 @@ include("play") {
     "repository"()
     "service"()
     "api"()
+    "sdk"()
+}
+
+include("sdk") {
+
+}
+
+include("containers") {
+    "monolith"()
 }
 
 include("presentation") {
     "types"()
     "result"()
     "input"()
+    "gateway" {
+        "ktor-krpc"()
+    }
     "api" {
         "krpc"()
         "krpc-impl"()
