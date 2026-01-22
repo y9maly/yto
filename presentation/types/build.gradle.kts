@@ -1,9 +1,7 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-
 plugins {
-    kotlin("multiplatform")
+    id("kmp-conventions")
     kotlin("plugin.serialization")
+    `maven-publish`
 }
 
 repositories {
@@ -13,25 +11,23 @@ repositories {
 kotlin.sourceSets.commonMain.get().kotlin.srcDir("src")
 
 kotlin {
-    jvm {
-        compilerOptions.jvmTarget = JvmTarget.JVM_11
-    }
-
-    js(IR) {
-        binaries.library()
-        generateTypeScriptDefinitions()
-        browser()
-        nodejs()
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        nodejs()
-    }
-
     sourceSets.commonMain.dependencies {
         api(project(":common:types"))
         api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+    }
+}
+
+publishing {
+    publications.withType<MavenPublication> {
+        groupId = "me.maly.y9to"
+        artifactId = "api-types"
+        version = "1.0-SNAPSHOT"
+        if (name != "kotlinMultiplatform")
+            artifactId += "-$name"
+    }
+
+    repositories {
+        mavenLocal()
     }
 }

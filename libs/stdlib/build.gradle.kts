@@ -1,12 +1,8 @@
-import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
-import org.jetbrains.kotlin.gradle.dsl.JvmTarget
-import org.jetbrains.kotlin.gradle.targets.js.webpack.KotlinWebpackConfig
-
 plugins {
-    kotlin("multiplatform")
+    id("kmp-conventions")
     kotlin("plugin.serialization")
-    id("org.jetbrains.kotlinx.atomicfu") version "0.29.0"
-    id("maven-publish")
+    id("org.jetbrains.kotlinx.atomicfu") version "0.30.0"
+    `maven-publish`
 }
 
 repositories {
@@ -14,22 +10,6 @@ repositories {
 }
 
 kotlin {
-    jvm {
-        compilerOptions.jvmTarget = JvmTarget.JVM_11
-    }
-
-    js(IR) {
-        binaries.library()
-        generateTypeScriptDefinitions()
-        browser()
-        nodejs()
-    }
-
-    @OptIn(ExperimentalWasmDsl::class)
-    wasmJs {
-        nodejs()
-    }
-
     sourceSets.commonMain.dependencies {
         implementation(kotlin("reflect"))
         implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
@@ -44,10 +24,15 @@ kotlin {
     }
 }
 
-group = "y9to.libs"
-version = "1.2-SNAPSHOT"
-
 publishing {
+    publications.withType<MavenPublication> {
+        groupId = "me.maly.y9to"
+        artifactId = "stdlib"
+        version = "1.0-SNAPSHOT"
+        if (name != "kotlinMultiplatform")
+            artifactId += "-$name"
+    }
+
     repositories {
         mavenLocal()
     }
