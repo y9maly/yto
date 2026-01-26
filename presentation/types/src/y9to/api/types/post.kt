@@ -41,7 +41,7 @@ sealed interface PostReplyHeader {
 }
 
 @Serializable
-sealed interface RepostHeader {
+sealed interface RepostPreview{
     val author: UserPreview
     val publishDate: Instant
     val lastEditDate: Instant?
@@ -52,7 +52,8 @@ sealed interface RepostHeader {
         override val author: UserPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
-    ) : RepostHeader
+        val content: PostContent,
+    ) : RepostPreview
 
     @Serializable
     data class DeletedPost(
@@ -60,7 +61,7 @@ sealed interface RepostHeader {
         override val author: UserPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
-    ) : RepostHeader
+    ) : RepostPreview
 }
 
 @Serializable
@@ -73,7 +74,7 @@ sealed interface PostContent {
 
     @Serializable
     data class Repost(
-        val header: RepostHeader,
+        val preview: RepostPreview,
         val comment: String?,
     ) : PostContent
 }

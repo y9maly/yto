@@ -2,7 +2,7 @@ plugins {
     kotlin("multiplatform") apply false
     kotlin("jvm") apply false
     kotlin("plugin.serialization") version "2.3.0" apply false
-    id("io.ktor.plugin") version "3.0.3" apply false
+    id("io.ktor.plugin") version "3.4.0" apply false
     id("com.dorongold.task-tree") version "4.0.1" apply false
     id("com.gradleup.shadow") version "9.0.1" apply false
     idea

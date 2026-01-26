@@ -33,7 +33,7 @@ sealed interface PostReplyHeader {
     ) : PostReplyHeader
 }
 
-sealed interface RepostHeader {
+sealed interface RepostPreview {
     val author: UserPreview
     val publishDate: Instant
     val lastEditDate: Instant?
@@ -43,14 +43,15 @@ sealed interface RepostHeader {
         override val author: UserPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
-    ) : RepostHeader
+        val content: PostContent,
+    ) : RepostPreview
 
     data class DeletedPost(
         val deletionDate: Instant,
         override val author: UserPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
-    ) : RepostHeader
+    ) : RepostPreview
 }
 
 enum class PostContentType { Standalone, Repost }
@@ -59,7 +60,7 @@ sealed interface PostContent {
     data class Standalone(val text: String) : PostContent
 
     data class Repost(
-        val header: RepostHeader,
+        val preview: RepostPreview,
         val comment: String?,
     ) : PostContent
 }

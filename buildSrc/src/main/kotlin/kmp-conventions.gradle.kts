@@ -1,6 +1,10 @@
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
 import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
+import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetType
+import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
 
 plugins {
     kotlin("multiplatform")
@@ -8,7 +12,19 @@ plugins {
 
 @OptIn(ExperimentalWasmDsl::class, ExperimentalKotlinGradlePluginApi::class)
 kotlin {
-    applyDefaultHierarchyTemplate {}
+    applyDefaultHierarchyTemplate {
+        common {
+            group("notWasmWasi") {
+                // KotlinHierarchyTemplate.default => KotlinHierarchyBuilderImpl => override fun withWasmWasi()
+                withCompilations {
+                    val target = it.target
+                    target.platformType != KotlinPlatformType.wasm ||
+                    target !is KotlinJsIrTarget ||
+                    target.wasmTargetType != KotlinWasmTargetType.WASI
+                }
+            }
+        }
+    }
 
     jvm {
         compilerOptions.jvmTarget = JvmTarget.JVM_11

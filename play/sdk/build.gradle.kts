@@ -13,7 +13,7 @@ dependencies {
     implementation(project(":play:api"))
     api(project(":sdk"))
 
-    val ktorVersion = "3.0.3"
+    val ktorVersion = "3.4.0"
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation(libs.kotlinx.rpc.krpc.client)
     implementation(libs.kotlinx.rpc.krpc.ktor.client)

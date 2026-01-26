@@ -20,7 +20,7 @@ dependencies {
     implementation(project(":backend:integration:selector-impl"))
     implementation(project(":backend:integration:data:repository-postgres"))
 
-    val ktorVersion = "3.0.3"
+    val ktorVersion = "3.4.0"
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
     implementation("io.ktor:ktor-network-tls-jvm:$ktorVersion")

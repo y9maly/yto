@@ -13,29 +13,6 @@ import y9to.api.types.SessionId
 import y9to.api.types.Token
 
 
-val httpClient = HttpClient(CIO) {
-    install(WebSockets)
-    installKrpc {
-        serialization {
-            json()
-        }
-    }
-}
-
-val rpcClient = httpClient.rpc {
-    url {
-        this.host = "localhost"
-        this.port = 8103
-        encodedPath = "/api"
-    }
-}
-
-val rpc = MainRpc(
-    rpcClient.withService(),
-    rpcClient.withService(),
-    rpcClient.withService(),
-)
-
 val token_invalid = Token(Token.Unsafe(SessionId(0), ""))
 val token_1 = Token(Token.Unsafe(SessionId(1), "0.0.1")) // rpc.auth.createSession()
 val token_2 = Token(token_1.unsafe.copy(session = SessionId(2)))

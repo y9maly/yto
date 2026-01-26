@@ -17,10 +17,13 @@ import backend.core.types.PostContent
 import backend.core.types.PostContentType
 import backend.core.types.PostId
 import backend.core.types.PostReplyHeader
-import backend.core.types.RepostHeader
+import backend.core.types.RepostPreview
 import backend.core.types.UserId
 import backend.core.types.UserPreview
 import integration.repository.internals.RandomFunction
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.singleOrNull
 import kotlinx.coroutines.flow.toList
@@ -41,6 +44,7 @@ import y9to.libs.stdlib.Slice
 import y9to.libs.stdlib.SpliceKey
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
+import y9to.libs.stdlib.optional.present
 import kotlin.io.encoding.Base64
 import kotlin.time.Instant
 
@@ -204,7 +208,11 @@ class PostRepository internal constructor(private val main: MainRepository) {
 
         val rows = query.toList()
 
-        val list = rows.map(::fromViewPost)
+        val list = coroutineScope {
+            rows.map { async { fromViewPost(it) } }
+                .awaitAll()
+        }
+
         val last = rows.lastOrNull()
         val nextPagingKey =
             if (last != null && list.size == limit)
@@ -214,7 +222,7 @@ class PostRepository internal constructor(private val main: MainRepository) {
     }
 }
 
-private fun fromViewPost(row: ResultRow): Post {
+private suspend fun PostRepository.fromViewPost(row: ResultRow): Post {
     val id = PostId(row[VPost.id].value)
     val publishDate = row[VPost.created_at]
     val lastEditDate = row[VPost.last_edit_date]
@@ -258,17 +266,18 @@ private fun fromViewPost(row: ResultRow): Post {
         PostContentType.Repost -> {
             val comment = row[VPost.repost_comment]
             val original_deleted_at = row[VPost.repost_original_deleted_at]
+            val original_id = row[VPost.repost_original_id] ?: error("Type is 'repost' but 'original_id' is null")
 
-            val header = run {
-                val original_id = row[VPost.repost_original_id] ?: error("Type is 'repost' but 'original_id' is null")
+            val preview = run {
                 val created_at = row[VPost.repost_original_created_at] ?: error("Type is 'repost' but 'original_created_at' is null")
                 val last_edit_date = row[VPost.repost_original_last_edit_date]
                 // Возможно временно. User id остается в БД навсегда даже после удаления пользователя. Поэтому null здесь никогда не будет.
                 val author_id = row[VPost.repost_original_author_id] ?: error("Type is 'repost' but 'original_author_id' is null")
                 val author_first_name = row[VPost.repost_original_author_first_name] ?: error("Type is 'repost' but 'original_author_first_name' is null")
                 val author_last_name = row[VPost.repost_original_author_last_name]
+                val content = this@fromViewPost.select(PostId(original_id))?.content
 
-                val idDeleted = original_deleted_at != null
+                val isDeleted = content == null
                 val deletionDate = original_deleted_at
                 val publishDate = created_at
                 val lastEditDate = last_edit_date
@@ -280,16 +289,17 @@ private fun fromViewPost(row: ResultRow): Post {
                     lastName = author_last_name,
                 )
 
-                if (!idDeleted)
-                    RepostHeader.Post(
+                if (!isDeleted)
+                    RepostPreview.Post(
                         postId = postId,
                         author = author,
                         publishDate = publishDate,
                         lastEditDate = lastEditDate,
+                        content = content,
                     )
                 else
-                    RepostHeader.DeletedPost(
-                        deletionDate = deletionDate,
+                    RepostPreview.DeletedPost(
+                        deletionDate = deletionDate ?: Instant.fromEpochSeconds(0),
                         author = author,
                         publishDate = publishDate,
                         lastEditDate = lastEditDate,
@@ -297,7 +307,7 @@ private fun fromViewPost(row: ResultRow): Post {
             }
 
             PostContent.Repost(
-                header = header,
+                preview = preview,
                 comment = comment,
             )
         }

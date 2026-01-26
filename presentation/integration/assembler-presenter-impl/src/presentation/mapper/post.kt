@@ -4,10 +4,10 @@ import y9to.api.types.Post
 import y9to.api.types.PostContent
 import y9to.api.types.PostId
 import y9to.api.types.PostReplyHeader
-import y9to.api.types.RepostHeader
+import y9to.api.types.RepostPreview
 import backend.core.types.Post as BackendPost
 import backend.core.types.PostId as BackendPostId
-import backend.core.types.RepostHeader as BackendRepostHeader
+import backend.core.types.RepostPreview as BackendRepostPreview
 import backend.core.types.PostReplyHeader as BackendPostReplyHeader
 import backend.core.types.PostContent as BackendPostContent
 
@@ -26,7 +26,7 @@ fun BackendPost.map() = Post(
 )
 
 
-fun BackendPostContent.map() = when (this) {
+fun BackendPostContent.map(): PostContent = when (this) {
     is BackendPostContent.Repost -> map()
     is BackendPostContent.Standalone -> map()
 }
@@ -37,7 +37,7 @@ fun BackendPostContent.Standalone.map() = PostContent.Standalone(
 
 fun BackendPostContent.Repost.map() = PostContent.Repost(
     comment = comment,
-    header = header.map(),
+    preview = preview.map(),
 )
 
 fun BackendPostReplyHeader.map() = when (this) {
@@ -56,19 +56,20 @@ fun BackendPostReplyHeader.DeletedPost.map() = PostReplyHeader.DeletedPost(
     author = author.map(),
 )
 
-fun BackendRepostHeader.map() = when (this) {
-    is BackendRepostHeader.Post -> map()
-    is BackendRepostHeader.DeletedPost -> map()
+fun BackendRepostPreview.map() = when (this) {
+    is BackendRepostPreview.Post -> map()
+    is BackendRepostPreview.DeletedPost -> map()
 }
 
-fun BackendRepostHeader.Post.map() = RepostHeader.Post(
+fun BackendRepostPreview.Post.map() = RepostPreview.Post(
     postId = postId.map(),
     publishDate = publishDate,
     author = author.map(),
     lastEditDate = lastEditDate,
+    content = content.map(),
 )
 
-fun BackendRepostHeader.DeletedPost.map() = RepostHeader.DeletedPost(
+fun BackendRepostPreview.DeletedPost.map() = RepostPreview.DeletedPost(
     publishDate = publishDate,
     author = author.map(),
     deletionDate = deletionDate,

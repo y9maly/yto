@@ -10,14 +10,11 @@ import y9to.api.types.AuthorizableId
 import y9to.api.types.InputPost
 import y9to.api.types.UserId
 import y9to.libs.stdlib.coroutines.flow.collectIn
-import y9to.sdk.createRpcSdkClient
+import y9to.sdk.createSdkClient
 
 
 suspend fun main(): Unit = coroutineScope {
-    val post = rpc.post.get(token_2, InputPost.MyRandomPost)
-    println(post)
-
-    val sdk = createRpcSdkClient(rpc)
+    val sdk = createSdkClient("localhost", 8103, "/")
     println(sdk.auth.authState.first())
 
     sdk.user.me.collectIn(this) {

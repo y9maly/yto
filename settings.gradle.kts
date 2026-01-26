@@ -18,7 +18,7 @@ val q=Array<Array<Any?>>(4){arrayOfNulls(64)};operator fun String.invoke(block:(
 hashCode()}};b=q[1][0].hashCode();q[1][0]=c;block();q[1][0]=b}fun include(name:String,init:()->Unit)
 =include(let{q[0][0]=1;q[0][1]=name;q[1][0]=1;q[1][1]=-1;q[2][0]=-1;q[3][0]=-1;init();mutableListOf<
 String>().apply {fun dfs(a:Int,b:String){add(b);var c=q[1][a+1].hashCode();while(c!=-1){val f="$b:"+
-q[0][c+1];dfs(c,f);c=q[2][c]!!.hashCode()}};dfs(0, ":${q[0][1]}")}}.also { println(it) })
+q[0][c+1];dfs(c,f);c=q[2][c]!!.hashCode()}};dfs(0, ":${q[0][1]}")}})
 /*@formatter:on*/
 
 
@@ -71,6 +71,9 @@ include("backend") {
     "domain" {
         "service"()
         "service-impl"()
+        "updatesCenter"()
+
+        "event"()
     }
 
     // Integration   (maybe Data idk, its not data only, its like domain-spi more)
@@ -84,6 +87,7 @@ include("backend") {
             "keyValueCache"()
             "keyValueCache-redis"()
         }
+        "eventCollector"()
         "thirdpartyOnlineStatus"()
         "notificationService"()
         "notificationService-firebase"()
