@@ -33,14 +33,19 @@ sealed interface PostReplyHeader {
     ) : PostReplyHeader
 }
 
+sealed interface PostAuthorPreview {
+    data class User(val id: UserId, val firstName: String, val lastName: String?) : PostAuthorPreview
+    data class DeletedUser(val firstName: String, val lastName: String?) : PostAuthorPreview
+}
+
 sealed interface RepostPreview {
-    val author: UserPreview
+    val author: PostAuthorPreview
     val publishDate: Instant
     val lastEditDate: Instant?
 
     data class Post(
         val postId: PostId,
-        override val author: UserPreview,
+        override val author: PostAuthorPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
         val content: PostContent,
@@ -48,7 +53,7 @@ sealed interface RepostPreview {
 
     data class DeletedPost(
         val deletionDate: Instant,
-        override val author: UserPreview,
+        override val author: PostAuthorPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
     ) : RepostPreview

@@ -13,6 +13,7 @@ import y9to.common.types.Birthday
 import y9to.libs.stdlib.InterfaceClass
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.optional.Optional
+import y9to.libs.stdlib.optional.none
 import kotlin.time.Clock
 
 
@@ -63,11 +64,12 @@ class UserService @InterfaceClass constructor(
 
     suspend fun edit(
         ref: UserReference,
-        phoneNumber: Optional<String?>,
-        email: Optional<String?>,
-        firstName: Optional<String>,
-        lastName: Optional<String?>,
-        bio: Optional<String?>,
+        phoneNumber: Optional<String?> = none(),
+        email: Optional<String?> = none(),
+        firstName: Optional<String> = none(),
+        lastName: Optional<String?> = none(),
+        bio: Optional<String?> = none(),
+        birthday: Optional<Birthday?> = none(),
     ): EditUserResult {
         val id = selector.select(ref)
             ?: return EditUserError.UnknownUserReference.asError()
@@ -79,6 +81,7 @@ class UserService @InterfaceClass constructor(
             firstName = firstName,
             lastName = lastName,
             bio = bio,
+            birthday = birthday,
         ).map()
     }
 }

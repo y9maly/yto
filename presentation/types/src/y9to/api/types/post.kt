@@ -1,7 +1,10 @@
+@file:JvmName("TypePostKt")
+
 package y9to.api.types
 
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
@@ -41,15 +44,27 @@ sealed interface PostReplyHeader {
 }
 
 @Serializable
+sealed interface PostAuthorPreview {
+    val firstName: String
+    val lastName: String?
+
+    @Serializable
+    data class User(val id: UserId, override val firstName: String, override val lastName: String?) : PostAuthorPreview
+
+    @Serializable
+    data class DeletedUser(override val firstName: String, override val lastName: String?) : PostAuthorPreview
+}
+
+@Serializable
 sealed interface RepostPreview{
-    val author: UserPreview
+    val author: PostAuthorPreview
     val publishDate: Instant
     val lastEditDate: Instant?
 
     @Serializable
     data class Post(
         val postId: PostId,
-        override val author: UserPreview,
+        override val author: PostAuthorPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
         val content: PostContent,
@@ -58,7 +73,7 @@ sealed interface RepostPreview{
     @Serializable
     data class DeletedPost(
         val deletionDate: Instant,
-        override val author: UserPreview,
+        override val author: PostAuthorPreview,
         override val publishDate: Instant,
         override val lastEditDate: Instant?,
     ) : RepostPreview

@@ -1,7 +1,10 @@
+@file:JvmName("ResultAuthKt")
+
 package y9to.api.types
 
 import kotlinx.serialization.Serializable as s
 import y9to.libs.stdlib.Union
+import kotlin.jvm.JvmName
 
 
 typealias LogInResult = Union<LogInOk, LogInError>

@@ -1,6 +1,9 @@
+@file:JvmName("InputPostKt")
+
 package y9to.api.types
 
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmName
 
 
 @Serializable

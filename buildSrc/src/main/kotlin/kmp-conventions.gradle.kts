@@ -3,8 +3,10 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetType
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
+import org.jetbrains.kotlin.gradle.targets.jvm.KotlinJvmTarget
 
 plugins {
     kotlin("multiplatform")
@@ -21,6 +23,14 @@ kotlin {
                     target.platformType != KotlinPlatformType.wasm ||
                     target !is KotlinJsIrTarget ||
                     target.wasmTargetType != KotlinWasmTargetType.WASI
+                }
+            }
+
+            group("notJvm") {
+                withCompilations {
+                    val target = it.target
+                    target !is KotlinJvmTarget &&
+                    (target !is KotlinWithJavaTarget<*, *> || target.platformType != KotlinPlatformType.jvm)
                 }
             }
         }

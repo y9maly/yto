@@ -1,10 +1,10 @@
+@file:JvmName("TypeUserKt")
+
 package y9to.api.types
 
-import kotlinx.serialization.Contextual
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.serializer
 import y9to.common.types.Birthday
-import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
@@ -31,10 +31,22 @@ data class UserId(val long: Long) : AuthorizableId
 @Serializable
 data class User(
     val id: UserId,
-    val registrationDate: @Contextual Instant,
+    val registrationDate: Instant,
     val firstName: String,
 //    val avatar: AnyContentId?,
 //    val header: AnyContentId?,
+    val lastName: String?,
+    val phoneNumber: String?,
+    val email: String?,
+    val bio: String?,
+    val birthday: Birthday?,
+)
+
+@Serializable
+data class MyProfile(
+    val id: UserId,
+    val registrationDate: Instant,
+    val firstName: String,
     val lastName: String?,
     val phoneNumber: String?,
     val email: String?,

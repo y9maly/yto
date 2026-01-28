@@ -1,3 +1,5 @@
+@file:JvmName("TypeAuthKt")
+
 package y9to.api.types
 
 import kotlinx.serialization.KSerializer
@@ -8,6 +10,7 @@ import kotlinx.serialization.descriptors.buildClassSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
+import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 

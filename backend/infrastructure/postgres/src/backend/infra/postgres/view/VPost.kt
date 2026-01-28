@@ -35,6 +35,7 @@ object VPost : LongIdTable("view_post") {
     val repost_original_deleted_at = timestamp("repost_original_deleted_at").nullable()
     val repost_original_last_edit_date = timestamp("repost_original_last_edit_date").nullable()
     val repost_original_author_id = long("repost_original_author_id").nullable()
+    val repost_original_author_deleted_at = timestamp("repost_original_author_deleted_at").nullable()
     val repost_original_author_first_name = text("repost_original_author_first_name").nullable()
     val repost_original_author_last_name = text("repost_original_author_last_name").nullable()
 }

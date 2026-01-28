@@ -1,12 +1,14 @@
 package presentation.mapper
 
 import y9to.api.types.Post
+import y9to.api.types.PostAuthorPreview
 import y9to.api.types.PostContent
 import y9to.api.types.PostId
 import y9to.api.types.PostReplyHeader
 import y9to.api.types.RepostPreview
 import backend.core.types.Post as BackendPost
 import backend.core.types.PostId as BackendPostId
+import backend.core.types.PostAuthorPreview as BackendPostAuthorPreview
 import backend.core.types.RepostPreview as BackendRepostPreview
 import backend.core.types.PostReplyHeader as BackendPostReplyHeader
 import backend.core.types.PostContent as BackendPostContent
@@ -75,4 +77,18 @@ fun BackendRepostPreview.DeletedPost.map() = RepostPreview.DeletedPost(
     deletionDate = deletionDate,
     lastEditDate = lastEditDate,
 )
+
+fun BackendPostAuthorPreview.map() = when (this) {
+    is BackendPostAuthorPreview.User -> PostAuthorPreview.User(
+        id = id.map(),
+        firstName = firstName,
+        lastName = lastName,
+    )
+
+    is BackendPostAuthorPreview.DeletedUser -> PostAuthorPreview.DeletedUser(
+        firstName = firstName,
+        lastName = lastName,
+    )
+}
+
 
