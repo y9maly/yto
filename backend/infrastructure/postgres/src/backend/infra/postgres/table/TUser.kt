@@ -16,6 +16,6 @@ object TUser : LongIdTable("users") {
 //    val avatar = anyContentId("avatar").nullable()
     val first_name = varchar("first_name", 64)
     val last_name = varchar("last_name", 64).nullable()
-    val bio = varchar("bio", 256).nullable()
+    val bio = varchar("bio", 1024).nullable()
     val birthday = birthday("birthday").nullable()
 }

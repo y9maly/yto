@@ -28,6 +28,7 @@ class Client internal constructor(
     val auth = AuthClient(this, initialSession, token)
     val user = UserClient(this)
     val feed = FeedClient(this)
+    val post = PostClient(this)
 
     private var _rpc: Pair<Job, MainRpc>? = null
     internal val rpc: MainRpc get() {

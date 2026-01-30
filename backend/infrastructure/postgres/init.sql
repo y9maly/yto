@@ -33,7 +33,7 @@ create table users (
     phone_number varchar(32),
     email varchar(128),
     password_plaintext varchar(256),
-    bio varchar(256),
+    bio varchar(1024),
     birthday date,
     -- 4 is a first leap year. used as 'no year specified'
     check ( extract(year from birthday) > 1800 OR extract(year from birthday) = 4 ),
