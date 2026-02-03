@@ -1,8 +1,10 @@
 package integration.repository.internals
 
+import kotlinx.coroutines.CoroutineScope
 import org.jetbrains.exposed.v1.core.Transaction
 
 
-internal data class DaoTransaction(
+internal class DaoTransaction(
+    scope: CoroutineScope,
     val exposedTransaction: Transaction,
-)
+) : CoroutineScope by scope

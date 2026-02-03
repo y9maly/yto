@@ -29,7 +29,7 @@ class UserRpcImpl(
             service.auth.getAuthState(sessionId) ?: return@authenticate null
         }.userIdOrNull() ?: return@authenticate null
         val user = service.user.get(userId) ?: return@authenticate null
-        presenter.MyProfile(user)
+        presenter.user.MyProfile(user)
     }
 
     override suspend fun get(token: Token, input: InputUser): User? = authenticate(token) {
@@ -72,7 +72,7 @@ class UserRpcImpl(
         }
 
         val newUser = service.user.get(userId) ?: error("Unreachable")
-        presenter.MyProfile(newUser).asOk()
+        presenter.user.MyProfile(newUser).asOk()
     }
 
     private suspend inline fun <R> authenticate(token: Token, block: CallContext.() -> R) =

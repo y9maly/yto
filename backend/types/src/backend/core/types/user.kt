@@ -1,12 +1,11 @@
 package backend.core.types
 
-import backend.core.types.AuthorizableId
 import y9to.common.types.Birthday
 import kotlin.time.Instant
 
 
 @JvmInline
-value class UserId(val long: Long) : AuthorizableId
+value class UserId(val long: Long) : ClientId
 
 data class User(
     val id: UserId,

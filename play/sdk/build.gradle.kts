@@ -12,6 +12,7 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 dependencies {
     implementation(project(":play:api"))
     api(project(":sdk"))
+    implementation(project(":libs:io"))
 
     val ktorVersion = "3.4.0"
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")

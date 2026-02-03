@@ -17,6 +17,7 @@ internal class ClientNetwork {
 class Client internal constructor(
     token: Token,
     initialSession: Session,
+    internal val httpClient: Any,
     internal val scope: CoroutineScope,
     private val rpcFactory: suspend () -> Pair<Job, MainRpc>,
 ) {
@@ -29,6 +30,7 @@ class Client internal constructor(
     val user = UserClient(this)
     val feed = FeedClient(this)
     val post = PostClient(this)
+    val file = FileClient(this)
 
     private var _rpc: Pair<Job, MainRpc>? = null
     internal val rpc: MainRpc get() {

@@ -15,4 +15,5 @@ dependencies {
     api(project(":backend:integration:eventCollector"))
     api(project(":backend:integration:selector"))
     api(project(":backend:integration:data:repository"))
+    api(project(":backend:integration:data:fileStorage"))
 }

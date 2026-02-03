@@ -19,6 +19,9 @@ dependencies {
     implementation(project(":backend:domain:service-impl"))
     implementation(project(":backend:integration:selector-impl"))
     implementation(project(":backend:integration:data:repository-postgres"))
+    implementation(project(":backend:integration:data:fileStorage-local"))
+
+    implementation("ch.qos.logback:logback-classic:1.5.27")
 
     val ktorVersion = "3.4.0"
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
@@ -29,6 +32,7 @@ dependencies {
     implementation("io.ktor:ktor-server-cors-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
+    implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
 
     val exposedVersion = "1.0.0-rc-4"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")

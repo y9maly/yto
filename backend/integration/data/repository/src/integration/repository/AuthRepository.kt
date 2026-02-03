@@ -10,7 +10,7 @@ import integration.repository.result.LogOutResult
 import backend.infra.postgres.table.TAuthState
 import backend.infra.postgres.table.TSession
 import backend.core.types.AuthState
-import backend.core.types.AuthorizableId
+import backend.core.types.ClientId
 import backend.core.types.Session
 import backend.core.types.SessionId
 import backend.core.types.UserId
@@ -74,27 +74,27 @@ class AuthRepository internal constructor(private val main: MainRepository) {
         return@transaction AuthState.Authorized(UserId(row[TAuthState.user]))
     }
 
-    suspend fun logIn(session: SessionId, authorizable: AuthorizableId): LogInResult = main.transaction {
+    suspend fun logIn(session: SessionId, client: ClientId): LogInResult = main.transaction {
         when (getAuthState(session)) {
             is AuthState.Unauthorized -> { /* ok */ }
             is AuthState.Authorized -> return@transaction LogInError.AlreadyLogInned.asError()
             null -> return@transaction LogInError.UnknownSessionId.asError()
         }
 
-        when (authorizable) {
+        when (client) {
             is UserId -> {
-                if (!main.user.exists(authorizable)) {
-                    return@transaction LogInError.UnknownAuthorizableId.asError()
+                if (!main.user.exists(client)) {
+                    return@transaction LogInError.UnknownClientId.asError()
                 }
             }
         }
 
         TAuthState.insert {
             it[TAuthState.session] = session.long
-            it[TAuthState.user] = authorizable.long
+            it[TAuthState.user] = client.long
         }
 
-//        main.eventsCollector.onEvent(SessionLogInned(session, authorizable))
+//        main.eventsCollector.onEvent(SessionLogInned(session, client))
 
         LogInOk.asOk()
     }

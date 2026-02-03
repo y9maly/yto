@@ -14,7 +14,7 @@ typealias LogOutOk = Unit
 sealed interface LogInError {
     data object AlreadyLogInned : LogInError
     data object UnknownSessionId : LogInError
-    data object UnknownAuthorizableId : LogInError
+    data object UnknownClientId : LogInError
 }
 
 sealed interface LogOutError {

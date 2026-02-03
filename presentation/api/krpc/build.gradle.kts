@@ -17,6 +17,7 @@ kotlin {
         api(project(":presentation:input"))
         api(project(":presentation:result"))
         implementation(libs.kotlinx.rpc.core)
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     }
 }
 

@@ -26,7 +26,7 @@ import kotlin.time.Instant
  * Котлин дебил и сериализует это как "123", и очевидно падает при десериализации этого.
  */
 @Serializable
-data class UserId(val long: Long) : AuthorizableId
+data class UserId(val long: Long) : ClientId
 
 @Serializable
 data class User(

@@ -1,16 +1,11 @@
 package y9to.sdk
 
-import io.ktor.client.HttpClient
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.plugins.websocket.WebSockets
-import io.ktor.http.encodedPath
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.isActive
-import kotlinx.coroutines.job
-import kotlinx.coroutines.launch
+import io.ktor.client.*
+import io.ktor.client.engine.cio.*
+import io.ktor.client.plugins.*
+import io.ktor.client.plugins.websocket.*
+import io.ktor.http.*
+import kotlinx.coroutines.*
 import kotlinx.rpc.krpc.ktor.client.installKrpc
 import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.serialization.json.json
@@ -18,6 +13,7 @@ import kotlinx.rpc.withService
 import y9to.api.krpc.MainRpc
 import y9to.api.types.SessionId
 import y9to.api.types.Token
+import kotlin.time.Duration.Companion.seconds
 
 
 actual suspend fun createSdkClient(host: String, port: Int, path: String): y9to.sdk.Client {
@@ -57,6 +53,7 @@ actual suspend fun createSdkClient(host: String, port: Int, path: String): y9to.
             rpcClient.withService(),
             rpcClient.withService(),
             rpcClient.withService(),
+            rpcClient.withService(),
         )
 
         currentRpc = job to rpc
@@ -68,5 +65,5 @@ actual suspend fun createSdkClient(host: String, port: Int, path: String): y9to.
     val token = Token(Token.Unsafe(SessionId(2), "0.0.1"))
     val session = rpc.auth.getSession(token)
     val scope = CoroutineScope(SupervisorJob())
-    return Client(token, session, scope, rpcFactory)
+    return Client(token, session, httpClient, scope, rpcFactory)
 }

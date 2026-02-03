@@ -77,7 +77,7 @@ class AuthRpcImpl(
                 return when (error) {
                     DomainLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
                     DomainLogInError.UnknownSessionId -> error("Invalid token")
-                    DomainLogInError.UnknownAuthorizableId -> LogInError.UserForSpecifiedAuthMethodNotFound
+                    DomainLogInError.UnknownClientId -> LogInError.UserForSpecifiedAuthMethodNotFound
                 }.asError()
             }
         return LogInOk.asOk()

@@ -111,4 +111,5 @@ include("common") {
 
 include("libs") {
     "stdlib"()
+    "io"()
 }

@@ -2,6 +2,7 @@ package play.service
 
 import domain.selector.MainSelector
 import domain.service.AuthServiceImpl
+import domain.service.FileServiceImpl
 import domain.service.MainService
 import domain.service.PostServiceImpl
 import domain.service.UserServiceImpl
@@ -29,6 +30,7 @@ val service = MainService(
     AuthServiceImpl(repository, clock),
     UserServiceImpl(repository, selector, clock),
     PostServiceImpl(repository, selector, clock),
+    FileServiceImpl(repository, TODO(), clock),
 )
 
 

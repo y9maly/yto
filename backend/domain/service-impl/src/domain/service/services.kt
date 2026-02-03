@@ -3,6 +3,7 @@
 package domain.service
 
 import domain.selector.MainSelector
+import integration.fileStorage.FileStorage
 import integration.repository.MainRepository
 import y9to.libs.stdlib.InterfaceClass
 import kotlin.time.Clock
@@ -24,3 +25,9 @@ fun PostServiceImpl(
     selector: MainSelector,
     clock: Clock,
 ) = PostService(repo, selector, clock)
+
+fun FileServiceImpl(
+    repo: MainRepository,
+    fileStorage: FileStorage,
+    clock: Clock,
+) = FileService(repo, fileStorage, clock)

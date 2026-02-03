@@ -2,13 +2,7 @@
 
 package y9to.api.types
 
-import kotlinx.serialization.KSerializer
 import kotlinx.serialization.Serializable
-import kotlinx.serialization.builtins.serializer
-import kotlinx.serialization.descriptors.SerialDescriptor
-import kotlinx.serialization.descriptors.buildClassSerialDescriptor
-import kotlinx.serialization.encoding.Decoder
-import kotlinx.serialization.encoding.Encoder
 import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
 import kotlin.time.Instant
@@ -30,14 +24,14 @@ data class Token(
  * User or Chatbot
  */
 @Serializable
-sealed interface AuthorizableId
+sealed interface ClientId
 
 @Serializable
 sealed interface AuthState {
     @Serializable
     data object Unauthorized : AuthState
     @Serializable
-    data class Authorized(val id: AuthorizableId) : AuthState
+    data class Authorized(val id: ClientId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id
     fun userIdOrNull() = (this as? Authorized)?.id as? UserId?

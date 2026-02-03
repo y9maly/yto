@@ -6,11 +6,11 @@ import kotlin.time.Instant
 /**
  * User or Chatbot
  */
-sealed interface AuthorizableId
+sealed interface ClientId
 
 sealed interface AuthState {
     data object Unauthorized : AuthState
-    data class Authorized(val id: AuthorizableId) : AuthState
+    data class Authorized(val id: ClientId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id
     fun userIdOrNull() = (this as? Authorized)?.id as? UserId?

@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetType
 import org.jetbrains.kotlin.gradle.targets.js.ir.KotlinJsIrTarget
@@ -16,7 +17,7 @@ plugins {
 kotlin {
     applyDefaultHierarchyTemplate {
         common {
-            group("notWasmWasi") {
+            group("nonWasmWasi") {
                 // KotlinHierarchyTemplate.default => KotlinHierarchyBuilderImpl => override fun withWasmWasi()
                 withCompilations {
                     val target = it.target
@@ -26,11 +27,17 @@ kotlin {
                 }
             }
 
-            group("notJvm") {
+            group("nonJvm") {
                 withCompilations {
                     val target = it.target
                     target !is KotlinJvmTarget &&
                     (target !is KotlinWithJavaTarget<*, *> || target.platformType != KotlinPlatformType.jvm)
+                }
+            }
+
+            group("nonAndroid") {
+                withCompilations {
+                    it.target !is KotlinAndroidTarget
                 }
             }
         }

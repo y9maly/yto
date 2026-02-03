@@ -19,7 +19,7 @@ typealias LogOutOk = Unit
 sealed interface LogInError {
     data object AlreadyLogInned : LogInError
     data object UnknownSessionId : LogInError
-    data object UnknownAuthorizableId : LogInError
+    data object UnknownClientId : LogInError
 }
 
 sealed interface LogOutError {
@@ -32,7 +32,7 @@ sealed interface LogOutError {
 fun DbLogInResult.map() = mapError { map() }
 fun DbLogInError.map() = when (this) {
     DbLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
-    DbLogInError.UnknownAuthorizableId -> LogInError.UnknownAuthorizableId
+    DbLogInError.UnknownClientId -> LogInError.UnknownClientId
     DbLogInError.UnknownSessionId -> LogInError.UnknownSessionId
 }
 

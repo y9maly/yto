@@ -21,6 +21,50 @@ create table auth_state (
 );
 
 
+---- files
+
+
+create table file (
+    id bigint generated always as identity primary key,
+    uri varchar(512) not null,
+    upload_date timestamp not null default current_timestamp,
+    expires_at timestamp,
+    size_bytes bigint not null,
+    owner_session bigint references session on update cascade,
+    owner_user bigint references users on update cascade,
+    owner_user_grave bigint references grave_users on update cascade
+);
+select setup_mortal_reference('file', 'owner_user');
+
+create table bitmap (
+    file bigint references file on delete cascade on update cascade primary key,
+    width integer,
+    height integer
+);
+
+create table image (
+    file bigint references file on delete cascade on update cascade primary key,
+    format varchar(8) not null,
+    width integer,
+    height integer
+);
+
+create table vector_image (
+    file bigint references file on delete cascade on update cascade primary key,
+    format varchar(8) not null,
+    width real,
+    height real
+);
+
+create table video (
+    file bigint references file on delete cascade on update cascade primary key,
+    format varchar(8) not null,
+    duration_millis bigint,
+    width integer,
+    height integer
+);
+
+
 ---- users
 
 
@@ -159,7 +203,13 @@ create or replace view view_grave_post as (
 create table post__standalone (
     id bigint references post on delete cascade on update cascade primary key,
     text varchar(4096) not null
---     attachments bigint[] not null
+);
+
+create table post__standalone__attachments (
+    id bigint generated always as identity,
+    post bigint references post on delete cascade on update cascade,
+    file bigint references file on update cascade,
+    caption varchar(4096) not null
 );
 
 create table post__repost (

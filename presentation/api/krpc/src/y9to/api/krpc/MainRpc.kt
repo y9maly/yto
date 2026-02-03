@@ -5,4 +5,5 @@ class MainRpc(
     val auth: AuthRpc,
     val user: UserRpc,
     val post: PostRpc,
+    val file: FileRpc,
 )

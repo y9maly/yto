@@ -20,16 +20,19 @@ val authenticator = SillyAuthenticator()
 val assembler = MainAssembler(
     user = UserAssemblerImpl(service),
     post = PostAssemblerImpl(service),
+    TODO()
 )
 
 val presenter = MainPresenter(
     auth = AuthPresenterImpl(service),
     user = UserPresenterImpl(service),
     post = PostPresenterImpl(service),
+    TODO()
 )
 
 val rpc = MainRpc(
     auth = AuthRpcImpl(authenticator, service, presenter),
     user = UserRpcImpl(authenticator, service, assembler, presenter),
     post = PostRpcImpl(authenticator, service, assembler, presenter),
+    TODO()
 )

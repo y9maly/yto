@@ -1,7 +1,7 @@
 package domain.service
 
 import backend.core.types.AuthState
-import backend.core.types.AuthorizableId
+import backend.core.types.ClientId
 import backend.core.types.Session
 import backend.core.types.SessionId
 import domain.service.result.LogInResult
@@ -20,8 +20,8 @@ class AuthService @InterfaceClass constructor(
         return repo.auth.getAuthState(session)
     }
 
-    suspend fun logIn(session: SessionId, authorizable: AuthorizableId): LogInResult {
-        return repo.auth.logIn(session, authorizable).map()
+    suspend fun logIn(session: SessionId, client: ClientId): LogInResult {
+        return repo.auth.logIn(session, client).map()
     }
 
     suspend fun logOut(session: SessionId): LogOutResult {

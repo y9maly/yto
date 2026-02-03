@@ -60,11 +60,11 @@ sealed class Union<out S, out E> {
             return decoder.decodeStructure(descriptor) {
                 val result = when (val index = decodeElementIndex(descriptor)) {
                     descriptor.getElementIndex("success") -> {
-                        successSerializer.deserialize(decoder).asOk()
+                        decodeSerializableElement(successSerializer.descriptor, index, successSerializer).asOk()
                     }
 
                     descriptor.getElementIndex("error") -> {
-                        errorSerializer.deserialize(decoder).asError()
+                        decodeSerializableElement(errorSerializer.descriptor, index, errorSerializer).asError()
                     }
 
                     else -> {

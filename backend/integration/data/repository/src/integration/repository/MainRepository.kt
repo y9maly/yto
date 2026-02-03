@@ -2,6 +2,7 @@ package integration.repository
 
 import integration.repository.internals.DaoTransaction
 import io.r2dbc.spi.IsolationLevel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.withContext
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.transactions.TransactionManager
@@ -21,6 +22,7 @@ class MainRepository @InterfaceClass constructor(
     val auth = AuthRepository(this)
     val user = UserRepository(this)
     val post = PostRepository(this)
+    val file = FileRepository(this)
 
     internal object ReadOnly
 
@@ -29,7 +31,9 @@ class MainRepository @InterfaceClass constructor(
         block: suspend DaoTransaction.() -> T
     ): T = withContext(transactionCoroutineContext) {
         suspendTransaction(transactionIsolation = transactionIsolation) {
-            block(DaoTransaction(TransactionManager.current()))
+            coroutineScope {
+                block(DaoTransaction(this, TransactionManager.current()))
+            }
         }
     }
 
@@ -39,7 +43,9 @@ class MainRepository @InterfaceClass constructor(
         block: suspend DaoTransaction.() -> T
     ): T = withContext(transactionCoroutineContext) {
         suspendTransaction(transactionIsolation = transactionIsolation, readOnly = true) {
-            block(DaoTransaction(TransactionManager.current()))
+            coroutineScope {
+                block(DaoTransaction(this, TransactionManager.current()))
+            }
         }
     }
 }
