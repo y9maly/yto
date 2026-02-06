@@ -18,4 +18,6 @@ object TUser : LongIdTable("users") {
     val last_name = varchar("last_name", 64).nullable()
     val bio = varchar("bio", 1024).nullable()
     val birthday = birthday("birthday").nullable()
+    val cover = long("cover").nullable()
+    val avatar = long("avatar").nullable()
 }

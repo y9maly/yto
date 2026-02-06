@@ -82,8 +82,8 @@ create table users (
     -- 4 is a first leap year. used as 'no year specified'
     check ( extract(year from birthday) > 1800 OR extract(year from birthday) = 4 ),
 
-    header bool generated always as ( null ) stored,
-    avatar bool generated always as ( null ) stored
+    cover bigint references file on update cascade,
+    avatar bigint references file on update cascade
 );
 select setup_revision('users');
 

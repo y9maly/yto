@@ -3,11 +3,18 @@ package presentation.presenter
 import presentation.integration.callContext.CallContext
 import presentation.mapper.map
 import y9to.api.types.File
+import y9to.api.types.FileId
 import y9to.api.types.Secure
+import backend.core.types.FileId as BackendFileId
 import backend.core.types.File as BackendFile
 
 
 class FilePresenterImpl : FilePresenter {
+    context(callContext: CallContext)
+    override suspend fun FileId(id: BackendFileId): FileId {
+        return id.map()
+    }
+
     context(callContext: CallContext)
     override suspend fun File(file: BackendFile): File {
         return File(

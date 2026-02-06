@@ -12,13 +12,13 @@ data class User(
     val revision: Revision,
     val registrationDate: Instant,
     val firstName: String,
-//    val avatar: AnyContentId?,
-//    val header: AnyContentId?,
     val lastName: String?,
     val phoneNumber: String?,
     val email: String?,
     val bio: String?,
     val birthday: Birthday?,
+    val cover: FileId?,
+    val avatar: FileId?,
 )
 
 data class UserPreview(

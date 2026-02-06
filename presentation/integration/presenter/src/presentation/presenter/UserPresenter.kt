@@ -12,5 +12,6 @@ interface UserPresenter {
     context(callContext: CallContext)
     suspend fun User(backendUser: BackendUser): User
 
+    context(callContext: CallContext)
     suspend fun MyProfile(backendUser: BackendUser): MyProfile
 }

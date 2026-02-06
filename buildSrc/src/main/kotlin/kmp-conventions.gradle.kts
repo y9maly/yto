@@ -3,6 +3,7 @@ import org.jetbrains.kotlin.gradle.ExperimentalWasmDsl
 import org.jetbrains.kotlin.gradle.dsl.JvmTarget
 import org.jetbrains.kotlin.gradle.plugin.KotlinHierarchyTemplate
 import org.jetbrains.kotlin.gradle.plugin.KotlinPlatformType
+import org.jetbrains.kotlin.gradle.plugin.KotlinTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinAndroidTarget
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinWithJavaTarget
 import org.jetbrains.kotlin.gradle.targets.js.KotlinWasmTargetType
@@ -13,32 +14,80 @@ plugins {
     kotlin("multiplatform")
 }
 
+// see KotlinHierarchyTemplate.default
+// see org.jetbrains.kotlin.gradle.plugin.hierarchy.KotlinHierarchyBuilderImpl
+
+private fun KotlinTarget.isAndroid(): Boolean {
+    return this is KotlinAndroidTarget
+}
+
+private fun KotlinTarget.isJvm(): Boolean {
+    if (this is KotlinJvmTarget)
+        return true
+    if (this is KotlinWithJavaTarget<*, *> && this.platformType == KotlinPlatformType.jvm)
+        return true
+    return false
+}
+
+private fun KotlinTarget.isWeb() = isJs() || isWasm()
+
+private fun KotlinTarget.isJs(): Boolean {
+    return this.platformType == KotlinPlatformType.js
+}
+
+private fun KotlinTarget.isWasm() = isWasmJs() || isWasmWasi()
+
+private fun KotlinTarget.isWasmJs(): Boolean {
+    if (this.platformType != KotlinPlatformType.wasm)
+        return false
+    if (this !is KotlinJsIrTarget)
+        return false
+    if (this.wasmTargetType != KotlinWasmTargetType.JS)
+        return false
+    return true
+}
+
+private fun KotlinTarget.isWasmWasi(): Boolean {
+    if (this.platformType != KotlinPlatformType.wasm)
+        return false
+    if (this !is KotlinJsIrTarget)
+        return false
+    if (this.wasmTargetType != KotlinWasmTargetType.WASI)
+        return false
+    return true
+}
+
+
 @OptIn(ExperimentalWasmDsl::class, ExperimentalKotlinGradlePluginApi::class)
 kotlin {
     applyDefaultHierarchyTemplate {
         common {
-            group("nonWasmWasi") {
-                // KotlinHierarchyTemplate.default => KotlinHierarchyBuilderImpl => override fun withWasmWasi()
-                withCompilations {
-                    val target = it.target
-                    target.platformType != KotlinPlatformType.wasm ||
-                    target !is KotlinJsIrTarget ||
-                    target.wasmTargetType != KotlinWasmTargetType.WASI
-                }
+            group("nonAndroid") {
+                withCompilations { !it.target.isAndroid() }
             }
 
             group("nonJvm") {
-                withCompilations {
-                    val target = it.target
-                    target !is KotlinJvmTarget &&
-                    (target !is KotlinWithJavaTarget<*, *> || target.platformType != KotlinPlatformType.jvm)
-                }
+                withCompilations { !it.target.isJvm() }
             }
 
-            group("nonAndroid") {
-                withCompilations {
-                    it.target !is KotlinAndroidTarget
-                }
+            group("nonWeb") {
+                withCompilations { !it.target.isWeb() }
+            }
+
+            group("nonJs") {
+                withCompilations { !it.target.isJs() }
+            }
+
+            group("nonWasm") {
+                withCompilations { !it.target.isWasm() }
+            }
+
+            group("nonWasmWasi") {
+                withCompilations { !it.target.isWasmWasi() }
+            }
+
+            group("nonWasmJs") {
+                withCompilations { !it.target.isWasmJs() }
             }
         }
     }

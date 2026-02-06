@@ -18,13 +18,18 @@ fun BackendPostId.map() = PostId(long)
 fun PostId.map() = BackendPostId(long)
 
 
-fun BackendPost.map() = Post(
+fun BackendPost.map(
+    canEdit: Boolean,
+    canDelete: Boolean,
+) = Post(
     id = id.map(),
     replyTo = replyTo?.map(),
     author = author.map(),
     publishDate = publishDate,
     lastEditDate = lastEditDate,
     content = content.map(),
+    canEdit = canEdit,
+    canDelete = canDelete,
 )
 
 

@@ -12,4 +12,6 @@ data class UpdateUserOk(val new: User)
 
 sealed interface UpdateUserError {
     data object UnknownUserId : UpdateUserError
+    data object InvalidCoverFileId : UpdateUserError
+    data object InvalidAvatarFileId : UpdateUserError
 }

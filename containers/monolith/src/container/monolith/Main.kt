@@ -20,13 +20,11 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
-import io.ktor.utils.io.core.remaining
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.UnsafeIoApi
-import kotlinx.io.readTo
 import kotlinx.io.unsafe.UnsafeBufferOperations
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
@@ -51,6 +49,7 @@ import y9to.api.krpc.types.FileSink
 import y9to.api.krpc.types.FileSource
 import kotlin.io.encoding.Base64
 import kotlin.io.path.Path
+import kotlin.properties.Delegates
 import kotlin.text.Charsets
 import kotlin.text.replace
 import kotlin.text.toByteArray
@@ -207,26 +206,28 @@ private fun createRpc(
                     .encode(uri.toByteArray(Charsets.UTF_8))
                     .replace('=', '_')
                 val url = "$fileGatewayAddress/$uploadFilePath/$uriBase64"
-                FileSink.HttpMultipart(url)
+                FileSink.HttpOctetStream(url)
             },
             fileSource = { uri ->
                 val uriBase64 = Base64.UrlSafe
                     .encode(uri.toByteArray(Charsets.UTF_8))
                     .replace('=', '_')
                 val url = "$fileGatewayAddress/$downloadFilePath/$uriBase64"
-                FileSource.Http(url)
+                FileSource.HttpOctetStream(url)
             }
         )
     )
 }
 
 private fun createPresenter(service: MainService): MainPresenter {
-    return MainPresenter(
+    var mainPresenter by Delegates.notNull<MainPresenter>()
+    mainPresenter = MainPresenter(
         auth = AuthPresenterImpl(service),
-        user = UserPresenterImpl(service),
+        user = UserPresenterImpl({ mainPresenter }, service),
         post = PostPresenterImpl(service),
         file = FilePresenterImpl(),
     )
+    return mainPresenter
 }
 
 private fun createAssembler(service: MainService): MainAssembler {

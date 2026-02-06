@@ -22,6 +22,8 @@ data class Post(
     val publishDate: Instant,
     val lastEditDate: Instant?,
     val content: PostContent,
+    val canEdit: Boolean,
+    val canDelete: Boolean,
 )
 
 @Serializable

@@ -1,21 +1,16 @@
 package integration.repository
 
+import backend.core.types.FileId
+import backend.core.types.User
+import backend.core.types.UserId
+import backend.infra.postgres.table.TUser
 import integration.repository.internals.FirstRevision
+import integration.repository.internals.RandomFunction
 import integration.repository.result.UpdateUserError
 import integration.repository.result.UpdateUserOk
 import integration.repository.result.UpdateUserResult
-import backend.infra.postgres.table.TUser
-import backend.core.types.User
-import backend.core.types.UserId
-import backend.infra.postgres.view.VPost
-import integration.repository.internals.RandomFunction
-import integration.repository.result.SelectAuthorPostError
 import kotlinx.coroutines.flow.firstOrNull
-import org.jetbrains.exposed.v1.core.Op
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.intLiteral
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
@@ -30,6 +25,10 @@ import kotlin.time.Instant
 
 
 class UserRepository internal constructor(private val main: MainRepository) {
+    val firstNameLength = 1..64
+    val lastNameLength = 1..64
+    val bioLength = 1..1024
+
     suspend fun select(id: UserId): User? {
         return selectByPredicate { TUser.id eq id.long }
     }
@@ -78,6 +77,8 @@ class UserRepository internal constructor(private val main: MainRepository) {
         lastName: Optional<String?>,
         bio: Optional<String?>,
         birthday: Optional<Birthday?>,
+        cover: Optional<FileId?>,
+        avatar: Optional<FileId?>,
     ): User = main.transaction {
         val userId = TUser.insertAndGetId { row ->
             row[this.registration_date] = registrationDate
@@ -87,6 +88,8 @@ class UserRepository internal constructor(private val main: MainRepository) {
             row[this.last_name] = lastName.getOrNull()
             row[this.bio] = bio.getOrNull()
             row[this.birthday] = birthday.getOrNull()
+            row[this.cover] = cover.getOrNull()?.long
+            row[this.avatar] = avatar.getOrNull()?.long
         }.value
 
         User(
@@ -99,6 +102,8 @@ class UserRepository internal constructor(private val main: MainRepository) {
             lastName = lastName.getOrNull(),
             bio = bio.getOrNull(),
             birthday = birthday.getOrNull(),
+            cover = cover.getOrNull(),
+            avatar = avatar.getOrNull(),
         ).also {
 //            main.eventsCollector.onEvent(UserInserted(it))
         }
@@ -115,9 +120,23 @@ class UserRepository internal constructor(private val main: MainRepository) {
         lastName: Optional<String?> = none(),
         bio: Optional<String?> = none(),
         birthday: Optional<Birthday?> = none(),
+        cover: Optional<FileId?> = none(),
+        avatar: Optional<FileId?> = none(),
     ): UpdateUserResult = main.transaction {
         val oldUser = select(id)
             ?: return@transaction UpdateUserError.UnknownUserId.asError()
+
+        cover.onPresent { cover ->
+            cover ?: return@onPresent
+            if (!main.file.exists(cover))
+                return@transaction UpdateUserError.InvalidCoverFileId.asError()
+        }
+
+        avatar.onPresent { avatar ->
+            avatar ?: return@onPresent
+            if (!main.file.exists(avatar))
+                return@transaction UpdateUserError.InvalidAvatarFileId.asError()
+        }
 
         TUser.update(where = { TUser.id eq id.long }) { row ->
             phoneNumber.onPresent {
@@ -143,6 +162,14 @@ class UserRepository internal constructor(private val main: MainRepository) {
             birthday.onPresent {
                 row[TUser.birthday] = it
             }
+
+            cover.onPresent {
+                row[TUser.cover] = it?.long
+            }
+
+            avatar.onPresent {
+                row[TUser.avatar] = it?.long
+            }
         }
 
         val newUser = select(id)
@@ -166,4 +193,6 @@ private fun fromRow(row: ResultRow) = User(
     lastName = row[TUser.last_name],
     bio = row[TUser.bio],
     birthday = row[TUser.birthday],
+    cover = row[TUser.cover]?.let(::FileId),
+    avatar = row[TUser.avatar]?.let(::FileId),
 )

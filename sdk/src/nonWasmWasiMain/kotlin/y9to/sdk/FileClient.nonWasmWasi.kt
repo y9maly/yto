@@ -6,9 +6,7 @@ import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import io.ktor.utils.io.*
-import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
-import kotlinx.coroutines.channels.ClosedSendChannelException
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
@@ -46,7 +44,7 @@ actual class FileClient internal actual constructor(
             ?: return false
 
         when (source) {
-            is FileSource.Http -> {
+            is FileSource.HttpOctetStream -> {
                 return downloadHttp(source.url, read)
             }
         }
@@ -68,8 +66,8 @@ actual class FileClient internal actual constructor(
         }
 
         when (sink) {
-            is FileSink.HttpMultipart -> {
-                return uploadHttpMultipart(sink.url, write)
+            is FileSink.HttpOctetStream -> {
+                return uploadHttp(sink.url, write)
             }
         }
     }
@@ -89,7 +87,7 @@ actual class FileClient internal actual constructor(
         return true
     }
 
-    private suspend fun uploadHttpMultipart(
+    private suspend fun uploadHttp(
         url: String,
         write: suspend WriteSegmentScope.() -> Unit,
     ): Union<File, UploadFileError> {

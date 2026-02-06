@@ -24,6 +24,8 @@ fun BackendUser.map(
     email = if (showEmail) email else null,
     bio = bio,
     birthday = birthday,
+    cover = cover?.map(),
+    avatar = avatar?.map(),
 )
 
 fun BackendUserPreview.map() = UserPreview(

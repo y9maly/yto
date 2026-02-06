@@ -10,8 +10,11 @@ import y9to.api.types.User
 
 
 class UserPresenterImpl(
+    main: () -> MainPresenter, // Aka @Lazy DI
     private val service: MainService,
 ) : UserPresenter {
+    val main by lazy { main() }
+
     context(callContext: CallContext)
     override suspend fun User(backendUser: backend.core.types.User): User {
         val authState = callContext.authStateOrPut {
@@ -27,6 +30,7 @@ class UserPresenterImpl(
         )
     }
 
+    context(callContext: CallContext)
     override suspend fun MyProfile(backendUser: backend.core.types.User): MyProfile {
         return MyProfile(
             id = backendUser.id.map(),
@@ -37,6 +41,8 @@ class UserPresenterImpl(
             email = backendUser.email,
             bio = backendUser.bio,
             birthday = backendUser.birthday,
+            cover = backendUser.cover?.let { main.file.FileId(it) },
+            avatar = backendUser.avatar?.let { main.file.FileId(it) },
         )
     }
 }

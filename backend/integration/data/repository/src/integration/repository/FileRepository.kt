@@ -47,6 +47,7 @@ class FileRepository internal constructor(private val main: MainRepository) {
             if (!main.user.exists(client)) {
                 return@transaction null
             }
+            return@transaction 0L
         }
 
         return@transaction bytes
