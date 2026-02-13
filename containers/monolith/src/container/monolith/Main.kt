@@ -3,6 +3,7 @@
 package container.monolith
 
 import backend.core.types.FileId
+import backend.infra.postgres.table.TPost
 import domain.selector.MainSelector
 import domain.service.*
 import domain.service.result.CommitFilePartsResult
@@ -21,17 +22,38 @@ import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.utils.io.*
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.newSingleThreadContext
 import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
 import kotlinx.io.UnsafeIoApi
 import kotlinx.io.unsafe.UnsafeBufferOperations
+import org.jetbrains.exposed.v1.core.AbstractQuery
+import org.jetbrains.exposed.v1.core.ColumnSet
+import org.jetbrains.exposed.v1.core.Expression
+import org.jetbrains.exposed.v1.core.FieldSet
+import org.jetbrains.exposed.v1.core.IColumnType
+import org.jetbrains.exposed.v1.core.Join
+import org.jetbrains.exposed.v1.core.JoinType
+import org.jetbrains.exposed.v1.core.Op
+import org.jetbrains.exposed.v1.core.QueryBuilder
 import org.jetbrains.exposed.v1.core.SqlLogger
 import org.jetbrains.exposed.v1.core.Transaction
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.intLiteral
+import org.jetbrains.exposed.v1.core.statements.Statement
 import org.jetbrains.exposed.v1.core.statements.StatementContext
+import org.jetbrains.exposed.v1.core.statements.StatementType
+import org.jetbrains.exposed.v1.core.statements.api.ResultApi
+import org.jetbrains.exposed.v1.core.statements.expandArgs
 import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
+import org.jetbrains.exposed.v1.r2dbc.R2dbcTransaction
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import org.jetbrains.exposed.v1.r2dbc.statements.SuspendExecutable
+import org.jetbrains.exposed.v1.r2dbc.statements.api.R2dbcPreparedStatementApi
+import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 import presentation.api.krpc.AuthRpcImpl
 import presentation.api.krpc.FileRpcImpl
 import presentation.api.krpc.PostRpcImpl
@@ -59,7 +81,7 @@ import kotlin.text.toLongOrNull
 import kotlin.time.Clock
 
 
-fun main() {
+suspend fun main() {
     val host = System.getenv("ktor_host") ?: "0.0.0.0"
     val port = System.getenv("ktor_port")?.toInt() ?: 8103
     // r2dbc:postgresql://user:password@host:port/database
@@ -68,8 +90,10 @@ fun main() {
     // /home/user/server/files
     val filesDirectory = System.getenv("y9to_files_directory") ?: error("y9to_files_directory environment variable is required")
 
+    val database = createDatabase(url = postgresUrl)
+
     val repository = createRepository(
-        database = createDatabase(url = postgresUrl),
+        database = database,
     )
 
     val fileStorage = createFileStorage(filesDirectory)

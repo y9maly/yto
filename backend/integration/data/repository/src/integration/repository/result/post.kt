@@ -16,6 +16,7 @@ sealed interface InsertPostError {
     data object UnknownAuthorId : InsertPostError
     data object UnknownReplyToPostId : InsertPostError
     data object InvalidInputContent : InsertPostError
+    data object InvalidInputLocation : InsertPostError
 }
 
 sealed interface SelectAuthorPostError {

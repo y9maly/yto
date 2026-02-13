@@ -8,6 +8,8 @@ import org.jetbrains.exposed.v1.datetime.timestamp
 
 object VPost : LongIdTable("view_post") {
     val revision = revision()
+    val location_global = bool("location_global")
+    val location_profile = long("location_profile").nullable()
     val created_at = timestamp("created_at")
     val last_edit_date = timestamp("last_edit_date").nullable()
     val content_type = postContentType("content_type")

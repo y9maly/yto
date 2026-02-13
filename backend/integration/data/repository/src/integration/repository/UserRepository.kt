@@ -1,5 +1,6 @@
 package integration.repository
 
+import backend.core.reference.UserReference
 import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
@@ -33,7 +34,14 @@ class UserRepository internal constructor(private val main: MainRepository) {
         return selectByPredicate { TUser.id eq id.long }
     }
 
-    suspend fun selectRandom(): User? = main.transaction(ReadOnly) {
+    suspend fun select(ref: UserReference): User? {
+        return when (ref) {
+            is UserReference.Id -> selectByPredicate { TUser.id eq ref.id.long }
+            is UserReference.Random -> selectRandom()
+        }
+    }
+
+    private suspend fun selectRandom(): User? = main.transaction(ReadOnly) {
         val row = TUser.selectAll()
             .orderBy(RandomFunction() to SortOrder.ASC)
             .limit(1)

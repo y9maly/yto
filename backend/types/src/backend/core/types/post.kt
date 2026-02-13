@@ -1,21 +1,29 @@
 package backend.core.types
 
+import kotlinx.serialization.Serializable
 import kotlin.time.Instant
 
 
 @JvmInline
+@Serializable
 value class PostId(val long: Long)
 
 
 data class Post(
     val id: PostId,
     val revision: Revision,
+    val location: PostLocation,
     val replyTo: PostReplyHeader?,
     val author: UserPreview,
     val publishDate: Instant,
     val lastEditDate: Instant?,
     val content: PostContent,
 )
+
+sealed interface PostLocation {
+    data object Global : PostLocation
+    data class Profile(val user: UserId) : PostLocation
+}
 
 sealed interface PostReplyHeader {
     val publishDate: Instant
@@ -59,6 +67,7 @@ sealed interface RepostPreview {
     ) : RepostPreview
 }
 
+@Serializable
 enum class PostContentType { Standalone, Repost }
 
 sealed interface PostContent {

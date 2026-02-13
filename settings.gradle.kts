@@ -63,8 +63,9 @@ include("backend") {
     // Core
 
     "types"()
-    "reference"()
+    "reference"() // reference/descriptor/selector
     "input"()
+    "event"()
 
     // Domain
 
@@ -72,8 +73,6 @@ include("backend") {
         "service"()
         "service-impl"()
         "updatesCenter"()
-
-        "event"()
     }
 
     // Integration   (maybe Data idk, its not data only, its like domain-spi more)

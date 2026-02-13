@@ -10,5 +10,5 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":backend:types"))
-    api(project(":backend:domain:event"))
+    api(project(":backend:event"))
 }

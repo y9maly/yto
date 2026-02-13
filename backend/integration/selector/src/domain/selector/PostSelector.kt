@@ -1,5 +1,6 @@
 package domain.selector
 
+import backend.core.reference.PostDescriptor
 import backend.core.reference.PostReference
 import backend.core.types.PostId
 import integration.repository.MainRepository
@@ -26,22 +27,25 @@ open class PostSelector @InterfaceClass constructor(
         }
 
         val userRef = when (ref) {
-            is PostReference.FirstAuthor -> ref.self
-            is PostReference.LastAuthor -> ref.self
-            is PostReference.RandomAuthor -> ref.self
+            is PostReference.FirstOfAuthor -> ref.author
+            is PostReference.LastOfAuthor -> ref.author
+            is PostReference.RandomOfAuthor -> ref.author
+            is PostDescriptor.FirstOfAuthor -> TODO()
+            is PostDescriptor.LastOfAuthor -> TODO()
+            is PostDescriptor.RandomOfAuthor -> TODO()
         }
 
         val userId = main.user.select(userRef)
             ?: return null
 
         val result = when (ref) {
-            is PostReference.FirstAuthor ->
+            is PostReference.FirstOfAuthor ->
                 repo.post.selectFirstPost(userId)
 
-            is PostReference.LastAuthor ->
+            is PostReference.LastOfAuthor ->
                 repo.post.selectLastPost(userId)
 
-            is PostReference.RandomAuthor ->
+            is PostReference.RandomOfAuthor ->
                 repo.post.selectRandomAuthorPost(userId)
         }
 

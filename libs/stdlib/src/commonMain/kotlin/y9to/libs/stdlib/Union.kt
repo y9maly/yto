@@ -155,6 +155,16 @@ sealed class Union<out S, out E> {
     }
 }
 
+fun <S, E> Union<S, E>.successOrNull(): S? {
+    if (isSuccess()) return value as S
+    return null
+}
+
+fun <S, E> Union<S, E>.errorOrNull(): E? {
+    if (isError()) return error as E
+    return null
+}
+
 inline fun <S, E> Union<S, E>.successOrElse(block: (E) -> S): S {
     if (isSuccess()) return value as S
     return block(error as E)

@@ -23,6 +23,7 @@ sealed interface CreatePostError {
     data object UnknownAuthorReference : CreatePostError
     data object UnknownReplyToPostReference : CreatePostError
     data object InvalidInputContent : CreatePostError
+    data object InvalidInputLocation : CreatePostError
 }
 
 sealed interface GetAuthorPostError {
@@ -36,4 +37,5 @@ fun InsertPostError.map() = when (this) {
     InsertPostError.InvalidInputContent -> CreatePostError.InvalidInputContent
     InsertPostError.UnknownAuthorId -> CreatePostError.UnknownAuthorReference
     InsertPostError.UnknownReplyToPostId -> CreatePostError.UnknownReplyToPostReference
+    InsertPostError.InvalidInputLocation -> CreatePostError.InvalidInputLocation
 }

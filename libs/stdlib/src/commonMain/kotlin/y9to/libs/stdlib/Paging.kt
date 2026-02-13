@@ -36,7 +36,7 @@ sealed interface SpliceKey<out PAGING_OPTIONS> {
     }
 }
 
-fun <T, R> SpliceKey<T>.mapOptions(transform: (T) -> R): SpliceKey<R> = when (this) {
+inline fun <T, R> SpliceKey<T>.mapOptions(transform: (T) -> R): SpliceKey<R> = when (this) {
     is SpliceKey.Continue -> this
     is SpliceKey.Initialize -> SpliceKey.Initialize(transform(options))
 }

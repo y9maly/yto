@@ -9,7 +9,7 @@ repositories {
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
-    api(project(":backend:domain:event"))
+    api(project(":backend:event"))
     api(project(":backend:domain:service"))
     api(project(":backend:types"))
     api(project(":backend:integration:eventCollector"))

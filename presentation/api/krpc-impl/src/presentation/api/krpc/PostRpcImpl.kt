@@ -1,5 +1,6 @@
 package presentation.api.krpc
 
+import backend.core.input.InputPostLocation
 import backend.core.reference.PostReference
 import backend.core.reference.UserReference
 import backend.core.reference.ref
@@ -22,11 +23,13 @@ import y9to.api.types.InputPost
 import y9to.api.types.InputPostContent
 import y9to.api.types.Post
 import y9to.api.types.Token
+import y9to.api.types.UserId
 import y9to.libs.stdlib.Slice
 import y9to.libs.stdlib.SpliceKey
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
 import y9to.libs.stdlib.mapList
+import y9to.libs.stdlib.mapOptions
 import y9to.libs.stdlib.successOrElse
 
 
@@ -61,12 +64,13 @@ class PostRpcImpl(
         val content = assembler.post.InputPostContent(content)
             ?: return@authenticate CreatePostError.InvalidInputContent.asError()
 
-        val post = service.post.create(userRef, replyToPost, content)
+        val post = service.post.create(InputPostLocation.Global, userRef, replyToPost, content)
             .successOrElse { error ->
                 return when (error) {
                     DomainCreatePostError.InvalidInputContent -> CreatePostError.InvalidInputContent
                     DomainCreatePostError.UnknownReplyToPostReference -> CreatePostError.UnknownReplyOption
                     DomainCreatePostError.UnknownAuthorReference -> CreatePostError.Unauthorized
+                    DomainCreatePostError.InvalidInputLocation -> error("Unreachable")
                 }.asError()
             }
 
@@ -74,7 +78,7 @@ class PostRpcImpl(
         remotePost.asOk()
     }
 
-    override suspend fun spliceGlobal(
+    override suspend fun sliceGlobal(
         token: Token,
         key: SpliceKey<Unit>,
         limit: Int
@@ -85,6 +89,25 @@ class PostRpcImpl(
                     async { presenter.post.Post(it) }
                 }
                 .mapList {
+                    it.await()
+                }
+        }
+    }
+
+    override suspend fun sliceProfile(
+        token: Token,
+        key: SpliceKey<UserId>,
+        limit: Int,
+    ): Slice<Post>? = authenticate(token) {
+        coroutineScope {
+            service.post.sliceProfile(
+                key = key.mapOptions { assembler.user.UserId(it) },
+                limit = limit,
+            )
+                ?.mapList {
+                    async { presenter.post.Post(it) }
+                }
+                ?.mapList {
                     it.await()
                 }
         }

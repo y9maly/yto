@@ -1,9 +1,15 @@
 package backend.core.input
 
 import backend.core.reference.PostReference
+import backend.core.reference.UserReference
 import backend.core.types.PostContentType
 import backend.core.types.PostId
 
+
+sealed interface InputPostLocation {
+    data object Global : InputPostLocation
+    data class Profile(val user: UserReference) : InputPostLocation
+}
 
 sealed interface InputPostContent {
     data class Standalone(val text: String) : InputPostContent

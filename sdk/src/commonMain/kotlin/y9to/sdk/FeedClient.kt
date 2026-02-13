@@ -1,5 +1,6 @@
 package y9to.sdk
 
+import kotlinx.coroutines.Dispatchers
 import y9to.api.types.Post
 import y9to.libs.stdlib.Slice
 import y9to.libs.stdlib.SpliceKey
@@ -12,7 +13,7 @@ class FeedClient internal constructor(val client: Client) {
         key: SpliceKey<FeedPagingOptions>,
         limit: Int,
     ): Slice<Post> {
-        return client.rpc.post.spliceGlobal(
+        return client.rpc.post.sliceGlobal(
             client.token,
             key.mapOptions {  },
             limit,

@@ -28,9 +28,9 @@ class PostAssemblerImpl(
         val selfRef = UserReference.Id(selfId)
 
         return when (input) {
-            is InputPost.MyFirstPost -> PostReference.FirstAuthor(selfRef)
-            is InputPost.MyRandomPost -> PostReference.RandomAuthor(selfRef)
-            is InputPost.MyLastPost -> PostReference.LastAuthor(selfRef)
+            is InputPost.MyFirstPost -> PostReference.FirstOfAuthor(selfRef)
+            is InputPost.MyRandomPost -> PostReference.RandomOfAuthor(selfRef)
+            is InputPost.MyLastPost -> PostReference.LastOfAuthor(selfRef)
         }
     }
 
