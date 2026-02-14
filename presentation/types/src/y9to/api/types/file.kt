@@ -1,33 +1,36 @@
 package y9to.api.types
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
 
 
-@Serializable
-data class FileId(val long: Long)
+@S data class FileId(val long: Long)
 
-@Serializable
-data class File(
+@S data class File(
     val id: FileId,
     val name: String?,
     val uploadDate: Secure<Instant>,
     val sizeBytes: Long,
 )
 
-@Serializable
-data class StorageQuota(
+@S sealed interface FileSink {
+    @S data class HttpOctetStream(val url: String) : FileSink
+}
+
+@S sealed interface FileSource {
+    @S data class HttpOctetStream(val url: String) : FileSource
+}
+
+@S data class StorageQuota(
     val totalBytes: Long,
     val usedBytes: Long,
 )
 
 
-@Serializable
-sealed interface FileType
+@S sealed interface FileType
 
-@Serializable
-data class FileTypes(
+@S data class FileTypes(
     val image: ImageFile?,
 ) {
     companion object {
@@ -36,8 +39,7 @@ data class FileTypes(
 }
 
 
-@Serializable
-data class ImageFile(
+@S data class ImageFile(
     val file: FileId,
     val format: ImageFileFormat,
     val width: Int?,
@@ -45,8 +47,7 @@ data class ImageFile(
 ) : FileType
 
 
-@Serializable
-data class ImageFileFormat(val name: String) {
+@S data class ImageFileFormat(val name: String) {
     companion object
 }
 

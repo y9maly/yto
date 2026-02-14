@@ -11,7 +11,8 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 
 dependencies {
-    implementation(project(":presentation:api:krpc-impl"))
+    implementation(project(":presentation:api:controller-default"))
+    implementation(project(":presentation:api:krpc-default"))
     implementation(project(":presentation:gateway:ktor-krpc"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation(project(":presentation:integration:authenticator-silly"))

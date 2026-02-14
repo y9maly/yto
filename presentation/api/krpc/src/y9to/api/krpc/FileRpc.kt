@@ -1,13 +1,7 @@
 package y9to.api.krpc
 
 import kotlinx.rpc.annotations.Rpc
-import y9to.api.krpc.types.FileSink
-import y9to.api.krpc.types.FileSource
-import y9to.api.types.File
-import y9to.api.types.FileId
-import y9to.api.types.FileTypes
-import y9to.api.types.Token
-import y9to.api.types.UploadFileError
+import y9to.api.types.*
 import y9to.libs.stdlib.Union
 
 

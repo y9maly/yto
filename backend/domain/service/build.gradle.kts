@@ -9,10 +9,11 @@ repositories {
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
-    api(project(":backend:event"))
+    api(project(":libs:paging:core"))
     api(project(":backend:types"))
-    api(project(":backend:reference"))
     api(project(":backend:input"))
+    api(project(":backend:query"))
+    api(project(":backend:event"))
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
 
     // Implementation

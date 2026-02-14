@@ -78,7 +78,6 @@ value class Optional<out T> @PublishedApi internal constructor(
         internal val none = Optional<Nothing>(NONE)
     }
 
-    // todo present/none?
     inline val isPresent get() = NONE != value
     inline val isNone get() = NONE == value
 

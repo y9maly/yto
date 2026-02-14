@@ -1,7 +1,6 @@
 package integration.repository.internalResolve
 
-import backend.core.reference.PostReference
-import backend.core.reference.UserReference
+import backend.core.types.UserReference
 import backend.core.types.UserId
 import integration.repository.MainRepository
 
@@ -9,5 +8,5 @@ import integration.repository.MainRepository
 internal suspend fun MainRepository.resolve(ref: UserReference): UserId? {
     if (ref is UserReference.Id)
         return ref.id
-    return user.select(ref)?.id
+    return user.get(ref)?.id
 }

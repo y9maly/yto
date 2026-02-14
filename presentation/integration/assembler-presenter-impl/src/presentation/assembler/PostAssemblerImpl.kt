@@ -1,12 +1,12 @@
 package presentation.assembler
 
-import backend.core.input.InputPostContent
-import backend.core.reference.PostReference
-import backend.core.reference.UserReference
+import backend.core.types.InputPostContent
+import backend.core.types.PostReference
+import backend.core.types.UserReference
 import domain.service.MainService
-import presentation.integration.callContext.CallContext
-import presentation.integration.callContext.elements.authStateOrPut
-import presentation.integration.callContext.elements.sessionId
+import presentation.integration.context.Context
+import presentation.integration.context.elements.authStateOrPut
+import presentation.integration.context.elements.sessionId
 import presentation.mapper.map
 import y9to.api.types.InputPost
 
@@ -14,13 +14,13 @@ import y9to.api.types.InputPost
 class PostAssemblerImpl(
     private val service: MainService,
 ) : PostAssembler {
-    context(callContext: CallContext)
+    context(context: Context)
     override suspend fun resolve(input: InputPost): PostReference? {
         if (input is InputPost.Id)
             return PostReference.Id(input.id.map())
 
-        val authState = callContext.authStateOrPut {
-            service.auth.getAuthState(callContext.sessionId)
+        val authState = authStateOrPut {
+            service.auth.getAuthState(sessionId)
                 ?: error("Unauthenticated")
         }
         val selfId = authState.userIdOrNull()
@@ -34,7 +34,7 @@ class PostAssemblerImpl(
         }
     }
 
-    context(callContext: CallContext)
+    context(context: Context)
     override suspend fun InputPostContent(input: y9to.api.types.InputPostContent): InputPostContent? {
         when (input) {
             is y9to.api.types.InputPostContent.Standalone -> {
@@ -42,7 +42,7 @@ class PostAssemblerImpl(
             }
 
             is y9to.api.types.InputPostContent.Repost -> {
-                val originalRef = callContext.postAssembler.resolve(input.original)
+                val originalRef = resolve(input.original)
                     ?: return null
 
                 return InputPostContent.Repost(

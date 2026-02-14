@@ -1,24 +1,24 @@
 package presentation.presenter
 
 import domain.service.MainService
-import presentation.integration.callContext.CallContext
-import presentation.integration.callContext.elements.authStateOrPut
-import presentation.integration.callContext.elements.sessionId
+import presentation.integration.context.Context
+import presentation.integration.context.elements.authStateOrPut
+import presentation.integration.context.elements.sessionId
 import presentation.mapper.map
 import y9to.api.types.MyProfile
 import y9to.api.types.User
 
 
 class UserPresenterImpl(
-    main: () -> MainPresenter, // Aka @Lazy DI
+    main: Lazy<MainPresenter>,
     private val service: MainService,
 ) : UserPresenter {
-    val main by lazy { main() }
+    private val main by main
 
-    context(callContext: CallContext)
+    context(context: Context)
     override suspend fun User(backendUser: backend.core.types.User): User {
-        val authState = callContext.authStateOrPut {
-            service.auth.getAuthState(callContext.sessionId)
+        val authState = authStateOrPut {
+            service.auth.getAuthState(sessionId)
                 ?: error("Unauthenticated")
         }
 
@@ -30,7 +30,7 @@ class UserPresenterImpl(
         )
     }
 
-    context(callContext: CallContext)
+    context(context: Context)
     override suspend fun MyProfile(backendUser: backend.core.types.User): MyProfile {
         return MyProfile(
             id = backendUser.id.map(),

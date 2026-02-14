@@ -2,7 +2,7 @@
 
 package y9to.api.types
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable as S
 import y9to.common.types.Birthday
 import kotlin.jvm.JvmName
 import kotlin.time.Instant
@@ -20,16 +20,14 @@ import kotlin.time.Instant
  * @JvmInline
  * value class B(val int: Int) : A
  *
- * Json.encodeToString(serializer<A>(), B(123))
+ * Json.encodeToString(serializer<A>(), B(123)) // "123" instead of `{"type": "B", int: 123}`
  * ```
  *
- * Котлин дебил и сериализует это как "123", и очевидно падает при десериализации этого.
+ * Коклен сериализует это как "123", и очевидно оно падает при десериализации.
  */
-@Serializable
-data class UserId(val long: Long) : ClientId
+@S data class UserId(val long: Long) : ClientId
 
-@Serializable
-data class User(
+@S data class User(
     val id: UserId,
     val registrationDate: Instant,
     val firstName: String,
@@ -42,8 +40,7 @@ data class User(
     val avatar: FileId?,
 )
 
-@Serializable
-data class MyProfile(
+@S data class MyProfile(
     val id: UserId,
     val registrationDate: Instant,
     val firstName: String,
@@ -56,8 +53,7 @@ data class MyProfile(
     val avatar: FileId?,
 )
 
-@Serializable
-data class UserPreview(
+@S data class UserPreview(
     val id: UserId,
     val firstName: String,
     val lastName: String?,

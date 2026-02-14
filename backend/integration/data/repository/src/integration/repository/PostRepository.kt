@@ -2,15 +2,29 @@
 
 package integration.repository
 
-import backend.core.reference.PostReference
-import backend.core.types.*
+import backend.core.types.Post
+import backend.core.types.PostAuthorPreview
+import backend.core.types.PostContent
+import backend.core.types.PostContentType
+import backend.core.types.PostFilter
+import backend.core.types.PostId
+import backend.core.types.PostLocation
+import backend.core.types.PostLocationPredicate
+import backend.core.types.PostPredicate
+import backend.core.types.PostReference
+import backend.core.types.PostReplyHeader
+import backend.core.types.RepostPreview
+import backend.core.types.UserId
+import backend.core.types.UserPredicate
+import backend.core.types.UserPreview
 import backend.infra.postgres.table.TPost
 import backend.infra.postgres.table.TPostRepost
 import backend.infra.postgres.table.TPostStandalone
 import backend.infra.postgres.view.VGravePost
 import backend.infra.postgres.view.VPost
-import integration.repository.input.*
-import integration.repository.internalResolve.resolve
+import integration.repository.input.InputPostContent
+import integration.repository.input.InputPostLocation
+import integration.repository.input.type
 import integration.repository.internals.FilterOp
 import integration.repository.internals.RandomFunction
 import integration.repository.internals.andFilter
@@ -27,117 +41,113 @@ import kotlinx.coroutines.flow.toList
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.*
-import org.jetbrains.exposed.v1.r2dbc.*
-import y9to.libs.stdlib.*
-import y9to.libs.stdlib.Slice
+import org.jetbrains.exposed.v1.core.ResultRow
+import org.jetbrains.exposed.v1.core.SortOrder
+import org.jetbrains.exposed.v1.core.eq
+import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.intLiteral
+import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.r2dbc.Query
+import org.jetbrains.exposed.v1.r2dbc.andWhere
+import org.jetbrains.exposed.v1.r2dbc.insert
+import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
+import org.jetbrains.exposed.v1.r2dbc.select
+import org.jetbrains.exposed.v1.r2dbc.selectAll
+import y9to.libs.paging.PagingKey
+import y9to.libs.paging.SerializablePagingKey
+import y9to.libs.paging.SerializedPagingKey
+import y9to.libs.paging.Slice
+import y9to.libs.paging.SliceKey
+import y9to.libs.stdlib.asError
+import y9to.libs.stdlib.asOk
 import kotlin.io.encoding.Base64
 import kotlin.time.Instant
 
 
 class PostRepository internal constructor(private val main: MainRepository) {
-    suspend fun select(id: PostId): Post? {
-        return select(acceptOnly(PostPredicate.Id(id))).firstOrNull()
-    }
+    suspend fun get(id: PostId) = get(PostReference.Id(id))
 
     //
 
-    suspend fun select(reference: PostReference): Post? = main.transaction(ReadOnly) {
+    suspend fun get(ref: PostReference): Post? = main.transaction(ReadOnly) {
         var query = VPost.selectAll()
             .limit(1)
 
-        query = when (reference) {
-            is PostReference.RandomOfAuthor -> TODO()
-
+        query = when (ref) {
             is PostReference.Id -> query
-                .where { VPost.id eq reference.id.long }
+                .where(VPost.id eq ref.id.long)
 
-            is PostReference.FirstOfAuthor -> query
-                .where(VPost.author_id eq (main.resolve(reference.author) ?: return@transaction null).long)
-                .orderBy(VPost.created_at to SortOrder.ASC)
+            is PostReference.RandomOf -> {
+                TODO()
+            }
+
+            is PostReference.FirstOfAuthor -> {
+                val author = main.user.get(ref.author)?.id
+                    ?: return@transaction null
+
+                query
+                    .where(VPost.author_id eq author.long)
+                    .orderBy(VPost.created_at to SortOrder.ASC)
+            }
+
+            is PostReference.RandomOfAuthor -> {
+                val author = main.user.get(ref.author)?.id
+                    ?: return@transaction null
+
+                query
+                    .where(VPost.author_id eq author.long)
+                    .orderBy(RandomFunction() to SortOrder.ASC)
+            }
+
+            is PostReference.LastOfAuthor -> {
+                val author = main.user.get(ref.author)?.id
+                    ?: return@transaction null
+
+                query
+                    .where(VPost.author_id eq author.long)
+                    .orderBy(VPost.created_at to SortOrder.DESC)
+            }
 
             is PostReference.First -> query
                 .orderBy(VPost.created_at to SortOrder.ASC)
 
-            is PostReference.Last -> TODO()
-            is PostReference.LastOfAuthor -> TODO()
-            is PostReference.Random -> TODO()
+            is PostReference.Random -> query
+                .orderBy(RandomFunction() to SortOrder.ASC)
+
+            is PostReference.Last -> query
+                .orderBy(VPost.created_at to SortOrder.DESC)
         }
 
-        TODO()
+        val row = query.firstOrNull() ?: return@transaction null
+        fromVPost(row)
     }
 
-    suspend fun select(filter: PostFilter): List<Post> = main.transaction(ReadOnly) {
+    data class SelectOptions(val filter: PostFilter, val sortOption: Nothing?)
+
+    @Serializable
+    data class SelectPagingKey(val filter: PostFilter) : SerializablePagingKey {
+        override fun serialize() = SerializedPagingKey(Json.encodeToString(this))
+
+        companion object {
+            fun of(pagingKey: PagingKey): SelectPagingKey {
+                if (pagingKey is SelectPagingKey)
+                    return pagingKey
+                if (pagingKey !is SerializedPagingKey)
+                    error("Invalid PagingKey")
+                return Json.decodeFromString(pagingKey.string)
+            }
+        }
+    }
+
+    suspend fun select(key: SliceKey<SelectOptions>, limit: Int): List<Post> = main.transaction(ReadOnly) {
         val rows = VPost.selectAll()
-            .andFilter(filter)
+            .andFilter(key.fold(
+                initialize = { it.filter },
+                next = { SelectPagingKey.of(it).filter }
+            ))
+            .limit(limit)
             .toList()
         rows.map { fromVPost(it) }
-    }
-
-    suspend fun selectFirstPost(author: UserId): SelectAuthorPostResult = main.transaction(ReadOnly) {
-        if (!main.user.exists(author))
-            return@transaction SelectAuthorPostError.UnknownAuthorId.asError()
-        val row = VPost.selectAll()
-            .where { VPost.author_id eq author.long }
-            .orderBy(VPost.created_at to SortOrder.ASC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction SelectAuthorPostError.AuthorHasNoPosts.asError()
-        val post = fromVPost(row)
-        post.asOk()
-    }
-
-    suspend fun selectLastPost(author: UserId): SelectAuthorPostResult = main.transaction(ReadOnly) {
-        if (!main.user.exists(author))
-            return@transaction SelectAuthorPostError.UnknownAuthorId.asError()
-        val row = VPost.selectAll()
-            .where { VPost.author_id eq author.long }
-            .orderBy(VPost.created_at to SortOrder.DESC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction SelectAuthorPostError.AuthorHasNoPosts.asError()
-        val post = fromVPost(row)
-        post.asOk()
-    }
-
-    suspend fun selectRandomPost(): Post? = main.transaction(ReadOnly) {
-        val row = VPost.selectAll()
-            .orderBy(RandomFunction() to SortOrder.ASC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction null
-        fromVPost(row)
-    }
-
-    suspend fun selectFirstPost(): Post? = main.transaction(ReadOnly) {
-        val row = VPost.selectAll()
-            .orderBy(VPost.created_at to SortOrder.ASC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction null
-        fromVPost(row)
-    }
-
-    suspend fun selectLastPost(): Post? = main.transaction(ReadOnly) {
-        val row = VPost.selectAll()
-            .orderBy(VPost.created_at to SortOrder.DESC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction null
-        fromVPost(row)
-    }
-
-    suspend fun selectRandomAuthorPost(author: UserId): SelectAuthorPostResult = main.transaction(ReadOnly) {
-        if (!main.user.exists(author))
-            return@transaction SelectAuthorPostError.UnknownAuthorId.asError()
-        val row = VPost.selectAll()
-            .where { VPost.author_id eq author.long }
-            .orderBy(RandomFunction() to SortOrder.ASC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction SelectAuthorPostError.AuthorHasNoPosts.asError()
-        val post = fromVPost(row)
-        post.asOk()
     }
 
     suspend fun exists(id: PostId): Boolean = main.transaction(ReadOnly) {
@@ -197,12 +207,12 @@ class PostRepository internal constructor(private val main: MainRepository) {
             }
         }
 
-        select(id)!!.asOk()
+        get(id)!!.asOk()
     }
 
     @Serializable
     @OptIn(ExperimentalSerializationApi::class)
-    private data class SplicePagingKey(
+    private data class SlicePagingKey(
         val date: Instant,
         val cursor: PostId,
         val filter: PostFilter,
@@ -213,8 +223,8 @@ class PostRepository internal constructor(private val main: MainRepository) {
         )
 
         companion object {
-            fun of(pagingKey: PagingKey): SplicePagingKey {
-                if (pagingKey is SplicePagingKey)
+            fun of(pagingKey: PagingKey): SlicePagingKey {
+                if (pagingKey is SlicePagingKey)
                     return pagingKey
                 if (pagingKey !is SerializedPagingKey)
                     error("Invalid PagingKey")
@@ -225,7 +235,7 @@ class PostRepository internal constructor(private val main: MainRepository) {
     }
 
     suspend fun slice(
-        key: SpliceKey<PostFilter>,
+        key: SliceKey<PostFilter>,
         limit: Int,
     ): Slice<Post> = main.transaction(ReadOnly) {
         var query = VPost.selectAll()
@@ -234,13 +244,13 @@ class PostRepository internal constructor(private val main: MainRepository) {
 
         val filter = key.fold(
             initialize = { it },
-            next = { SplicePagingKey.of(it).filter }
+            next = { SlicePagingKey.of(it).filter }
         )
 
         key.fold(
             initialize = {},
             next = {
-                val cursor = SplicePagingKey.of(it)
+                val cursor = SlicePagingKey.of(it)
                 query = query.andWhere {
                     (VPost.created_at less cursor.date) //or
 //                    ((VPost.created_at eq cursor.date) and (VPost.id greater cursor.cursor.long))
@@ -260,7 +270,7 @@ class PostRepository internal constructor(private val main: MainRepository) {
         val last = rows.lastOrNull()
         val nextPagingKey =
             if (last != null && list.size == limit)
-                SplicePagingKey(
+                SlicePagingKey(
                     date = last[VPost.created_at],
                     cursor = PostId(last[VPost.id].value),
                     filter = filter,
@@ -368,7 +378,7 @@ private suspend fun PostRepository.fromVPost(row: ResultRow): Post {
                 val author_deleted_at = row[VPost.repost_original_author_deleted_at]
                 val author_first_name = row[VPost.repost_original_author_first_name] ?: error("Type is 'repost' but 'original_author_first_name' is null")
                 val author_last_name = row[VPost.repost_original_author_last_name]
-                val content = this@fromVPost.select(PostId(original_id))?.content
+                val content = this@fromVPost.get(PostId(original_id))?.content
 
                 val isDeleted = content == null
                 val deletionDate = original_deleted_at

@@ -23,10 +23,8 @@ q[0][c+1];dfs(c,f);c=q[2][c]!!.hashCode()}};dfs(0, ":${q[0][1]}")}})
 
 
 include("play") {
-    "repository"()
-    "service"()
-    "api"()
     "sdk"()
+    "monolith"()
 }
 
 include("sdk") {
@@ -45,14 +43,15 @@ include("presentation") {
         "ktor-krpc"()
     }
     "api" {
+        "controller"()
+        "controller-default"()
         "krpc"()
-        "krpc-impl"()
+        "krpc-default"()
     }
     "integration" {
-        "callContext"()
+        "context"()
         "authenticator"()
         "authenticator-silly"()
-        "referenceResolver"()
         "assembler"()
         "presenter"()
         "assembler-presenter-impl"()
@@ -63,8 +62,8 @@ include("backend") {
     // Core
 
     "types"()
-    "reference"() // reference/descriptor/selector
     "input"()
+    "query"()
     "event"()
 
     // Domain
@@ -110,5 +109,8 @@ include("common") {
 
 include("libs") {
     "stdlib"()
+    "paging" {
+        "core"()
+    }
     "io"()
 }

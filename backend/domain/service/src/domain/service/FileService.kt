@@ -14,10 +14,7 @@ import integration.fileStorage.CloseResult
 import integration.fileStorage.CreateResult
 import integration.fileStorage.FileStorage
 import integration.repository.MainRepository
-import kotlinx.io.Buffer
-import kotlinx.io.RawSource
 import kotlinx.io.Source
-import kotlinx.io.buffered
 import y9to.libs.stdlib.InterfaceClass
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Clock
@@ -40,7 +37,7 @@ class FileService @InterfaceClass constructor(
     private val uploadingFiles = ConcurrentHashMap<String, UploadingFile>()
 
     suspend fun get(id: FileId): File? {
-        return repo.file.select(id)
+        return repo.file.get(id)
     }
 
     suspend fun getClientStorageQuota(client: ClientId): ClientStorageQuota? {
@@ -133,7 +130,7 @@ class FileService @InterfaceClass constructor(
             is FileOwner.Unknown -> { /* do nothing */ }
         }
 
-        val file = repo.file.insert(
+        val file = repo.file.create(
             uri = uri,
             name = uploadingFile.name,
             owner = uploadingFile.owner,
@@ -156,7 +153,7 @@ class FileService @InterfaceClass constructor(
             is CreateResult.Ok -> result.uri to result.sizeBytes
         }
 
-        return repo.file.insert(
+        return repo.file.create(
             uri = uri,
             name = name,
             owner = owner,
@@ -168,7 +165,7 @@ class FileService @InterfaceClass constructor(
     }
 
     suspend fun download(id: FileId): Source? {
-        return download(repo.file.select(id)?.uri ?: return null)
+        return download(repo.file.get(id)?.uri ?: return null)
     }
 
     suspend fun download(uri: String): Source? {
@@ -182,7 +179,7 @@ class FileService @InterfaceClass constructor(
         sizeBytes: Long,
         types: FileTypes,
     ): File {
-        return repo.file.insert(
+        return repo.file.create(
             uri = uri,
             name = name,
             owner = owner,

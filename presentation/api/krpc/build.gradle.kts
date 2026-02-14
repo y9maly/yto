@@ -16,6 +16,7 @@ kotlin {
         api(project(":presentation:types"))
         api(project(":presentation:input"))
         api(project(":presentation:result"))
+        implementation(project(":libs:paging:core"))
         implementation(libs.kotlinx.rpc.core)
         implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
     }

@@ -14,26 +14,6 @@ sealed interface InputPostLocation {
     data class Profile(val user: UserId) : InputPostLocation
 }
 
-typealias PostFilter = Filter<PostPredicate>
-@Serializable
-sealed interface PostPredicate {
-    @Serializable
-    data class Id(val id: PostId) : PostPredicate
-    @Serializable
-    data class Location(val location: PostLocationFilter) : PostPredicate
-    @Serializable
-    data class Content(val type: PostContentType) : PostPredicate
-}
-
-typealias PostLocationFilter = Filter<PostLocationPredicate>
-@Serializable
-sealed interface PostLocationPredicate {
-    @Serializable
-    data object Global : PostLocationPredicate
-    @Serializable
-    data class Profile(val user: UserFilter) : PostLocationPredicate
-}
-
 sealed interface InputPostContent {
     data class Standalone(val text: String) : InputPostContent
     data class Repost(val comment: String?, val original: PostId) : InputPostContent

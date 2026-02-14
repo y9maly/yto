@@ -1,4 +1,5 @@
 secret.txt
+local.properties
 .run
 .gradle
 kotlin-js-store

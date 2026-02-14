@@ -1,6 +1,6 @@
 package domain.service
 
-import backend.core.reference.UserReference
+import backend.core.types.UserReference
 import backend.core.types.FileId
 import backend.core.types.SessionId
 import backend.core.types.User
@@ -25,7 +25,7 @@ class UserService @InterfaceClass constructor(
     suspend fun get(id: UserId) = get(UserReference.Id(id))
     suspend fun get(ref: UserReference): User? {
         val id = selector.select(ref) ?: return null
-        return repo.user.select(id)
+        return repo.user.get(id)
     }
 
     suspend fun exists(id: UserId) = exists(UserReference.Id(id))

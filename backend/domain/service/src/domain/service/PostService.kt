@@ -1,26 +1,26 @@
 package domain.service
 
-import backend.core.input.InputPostContent
-import backend.core.input.InputPostLocation
-import backend.core.reference.PostReference
-import backend.core.reference.UserReference
+import backend.core.types.InputPostContent
+import backend.core.types.InputPostLocation
 import backend.core.types.Post
 import backend.core.types.PostId
+import backend.core.types.PostLocationPredicate
+import backend.core.types.PostPredicate
+import backend.core.types.PostReference
 import backend.core.types.UserId
+import backend.core.types.UserPredicate
+import backend.core.types.UserReference
 import backend.core.types.acceptOnly
 import domain.selector.MainSelector
 import domain.service.result.CreatePostError
 import domain.service.result.CreatePostResult
 import domain.service.result.map
 import integration.repository.MainRepository
-import integration.repository.input.PostLocationPredicate
-import integration.repository.input.PostPredicate
-import integration.repository.input.UserPredicate
+import y9to.libs.paging.Slice
+import y9to.libs.paging.SliceKey
+import y9to.libs.paging.mapOptions
 import y9to.libs.stdlib.InterfaceClass
-import y9to.libs.stdlib.Slice
-import y9to.libs.stdlib.SpliceKey
 import y9to.libs.stdlib.asError
-import y9to.libs.stdlib.mapOptions
 import kotlin.time.Clock
 
 
@@ -32,7 +32,7 @@ class PostService @InterfaceClass constructor(
     suspend fun get(id: PostId) = get(PostReference.Id(id))
     suspend fun get(ref: PostReference): Post? {
         val id = selector.select(ref) ?: return null
-        return repo.post.select(id)
+        return repo.post.get(id)
     }
 
     suspend fun create(
@@ -63,7 +63,7 @@ class PostService @InterfaceClass constructor(
     }
 
     suspend fun sliceGlobal(
-        key: SpliceKey<Unit>,
+        key: SliceKey<Unit>,
         limit: Int,
     ): Slice<Post> {
         return repo.post.slice(
@@ -77,7 +77,7 @@ class PostService @InterfaceClass constructor(
     }
 
     suspend fun sliceProfile(
-        key: SpliceKey<UserId>,
+        key: SliceKey<UserId>,
         limit: Int,
     ): Slice<Post>? {
         return repo.post.slice(

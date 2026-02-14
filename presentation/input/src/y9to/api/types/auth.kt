@@ -2,14 +2,11 @@
 
 package y9to.api.types
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmName
 
 
-@Serializable
-sealed interface InputAuthMethod {
-    @Serializable
-    data class PhoneNumber(val phoneNumber: String) : InputAuthMethod
-    @Serializable
-    data class Email(val email: String) : InputAuthMethod
+@S sealed interface InputAuthMethod {
+    @S data class PhoneNumber(val phoneNumber: String) : InputAuthMethod
+    @S data class Email(val email: String) : InputAuthMethod
 }

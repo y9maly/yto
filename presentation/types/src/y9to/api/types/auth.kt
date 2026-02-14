@@ -2,18 +2,16 @@
 
 package y9to.api.types
 
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-@Serializable
-data class Token(
+@S data class Token(
     val unsafe: Unsafe
 ) {
-    @Serializable
-    data class Unsafe(
+    @S data class Unsafe(
         val session: SessionId,
         val apiVersion: String,
     )
@@ -23,27 +21,20 @@ data class Token(
 /**
  * User or Chatbot
  */
-@Serializable
-sealed interface ClientId
+@S sealed interface ClientId
 
-@Serializable
-sealed interface AuthState {
-    @Serializable
-    data object Unauthorized : AuthState
-    @Serializable
-    data class Authorized(val id: ClientId) : AuthState
+@S sealed interface AuthState {
+    @S data object Unauthorized : AuthState
+    @S data class Authorized(val id: ClientId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id
     fun userIdOrNull() = (this as? Authorized)?.id as? UserId?
 }
 
-
-@Serializable
 @JvmInline
-value class SessionId(val long: Long)
+@S value class SessionId(val long: Long)
 
-@Serializable
-data class Session(
+@S data class Session(
     val id: SessionId,
     val creationDate: Instant,
 )

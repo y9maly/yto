@@ -15,7 +15,6 @@ import y9to.libs.stdlib.successOrElse
 @Rpc
 interface AuthRpc {
     suspend fun createSession(): Token
-    // just until update system starts working
     suspend fun needResetLocalCache(token: Token): Boolean
     suspend fun getSession(token: Token): Session
     suspend fun getAuthState(token: Token): AuthState

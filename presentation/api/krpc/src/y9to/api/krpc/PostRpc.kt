@@ -2,8 +2,8 @@ package y9to.api.krpc
 
 import kotlinx.rpc.annotations.Rpc
 import y9to.api.types.*
-import y9to.libs.stdlib.Slice
-import y9to.libs.stdlib.SpliceKey
+import y9to.libs.paging.Slice
+import y9to.libs.paging.SliceKey
 
 
 @Rpc
@@ -18,13 +18,13 @@ interface PostRpc {
 
     suspend fun sliceGlobal(
         token: Token,
-        key: SpliceKey<Unit>,
+        key: SliceKey<Unit>,
         limit: Int,
     ): Slice<Post>
 
     suspend fun sliceProfile(
         token: Token,
-        key: SpliceKey<UserId>,
+        key: SliceKey<UserId>,
         limit: Int,
     ): Slice<Post>?
 }

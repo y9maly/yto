@@ -1,7 +1,7 @@
 package domain.selector
 
-import backend.core.reference.PostReference
-import backend.core.reference.UserReference
+import backend.core.types.PostReference
+import backend.core.types.UserReference
 import integration.repository.MainRepository
 import y9to.libs.stdlib.InterfaceClass
 

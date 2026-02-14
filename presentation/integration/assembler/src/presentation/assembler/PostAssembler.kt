@@ -2,26 +2,23 @@
 
 package presentation.assembler
 
-import backend.core.reference.PostReference
-import presentation.assembler.postAssembler
-import presentation.integration.callContext.CallContext
-import presentation.integration.callContext.CallContext.Keys
+import backend.core.types.PostReference
+import presentation.integration.context.Context
 import y9to.api.types.InputPost
 import y9to.api.types.InputPostContent
-import y9to.libs.stdlib.delegates.static
-import backend.core.input.InputPostContent as DomainInputPostContent
+import backend.core.types.InputPostContent as DomainInputPostContent
 
 
 interface PostAssembler {
-    context(callContext: CallContext)
+    context(context: Context)
     suspend fun resolve(input: InputPost): PostReference?
 
-    context(callContext: CallContext)
+    context(context: Context)
     suspend fun InputPostContent(input: InputPostContent): DomainInputPostContent?
 }
 
-val Keys.postAssembler by static { CallContext.Key<PostAssembler>() }
+context(_: Context, assembler: PostAssembler)
+suspend fun InputPost.resolve(): PostReference? = assembler.resolve(this)
 
-var CallContext.postAssembler
-    get() = contextMap[Keys.postAssembler]
-    set(value) { contextMap[Keys.postAssembler] = value }
+context(_: Context, assembler: PostAssembler)
+suspend fun InputPostContent.map(): DomainInputPostContent? = assembler.InputPostContent(this)

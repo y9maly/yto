@@ -1,6 +1,6 @@
 package integration.repository
 
-import backend.core.reference.UserReference
+import backend.core.types.UserReference
 import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
@@ -30,18 +30,18 @@ class UserRepository internal constructor(private val main: MainRepository) {
     val lastNameLength = 1..64
     val bioLength = 1..1024
 
-    suspend fun select(id: UserId): User? {
+    suspend fun get(id: UserId): User? {
         return selectByPredicate { TUser.id eq id.long }
     }
 
-    suspend fun select(ref: UserReference): User? {
+    suspend fun get(ref: UserReference): User? {
         return when (ref) {
             is UserReference.Id -> selectByPredicate { TUser.id eq ref.id.long }
-            is UserReference.Random -> selectRandom()
+            is UserReference.Random -> getRandom()
         }
     }
 
-    private suspend fun selectRandom(): User? = main.transaction(ReadOnly) {
+    private suspend fun getRandom(): User? = main.transaction(ReadOnly) {
         val row = TUser.selectAll()
             .orderBy(RandomFunction() to SortOrder.ASC)
             .limit(1)
@@ -50,6 +50,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
         fromRow(row)
     }
 
+    // todo
     suspend fun selectByPhoneNumber(phoneNumber: String): User? {
         return selectByPredicate { TUser.phone_number eq phoneNumber }
     }
@@ -131,7 +132,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
     ): UpdateUserResult = main.transaction {
-        val oldUser = select(id)
+        val oldUser = get(id)
             ?: return@transaction UpdateUserError.UnknownUserId.asError()
 
         cover.onPresent { cover ->
@@ -180,7 +181,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
             }
         }
 
-        val newUser = select(id)
+        val newUser = get(id)
             ?: return@transaction UpdateUserError.UnknownUserId.asError()
 
 //        main.eventsCollector.onEvent(UserUpdated(old = oldUser, new = newUser))

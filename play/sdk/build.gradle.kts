@@ -10,7 +10,6 @@ repositories {
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
-    implementation(project(":play:api"))
     api(project(":sdk"))
     implementation(project(":libs:io"))
 

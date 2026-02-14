@@ -23,7 +23,6 @@ import org.jetbrains.exposed.v1.r2dbc.insert
 import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
 import org.jetbrains.exposed.v1.r2dbc.select
 import org.jetbrains.exposed.v1.r2dbc.selectAll
-import kotlin.math.exp
 import kotlin.time.Instant
 
 
@@ -53,7 +52,7 @@ class FileRepository internal constructor(private val main: MainRepository) {
         return@transaction bytes
     }
 
-    suspend fun select(id: FileId): File? = main.transaction(ReadOnly) {
+    suspend fun get(id: FileId): File? = main.transaction(ReadOnly) {
         val row = TFile.selectAll()
             .where { TFile.id eq id.long }
             .firstOrNull()
@@ -81,7 +80,7 @@ class FileRepository internal constructor(private val main: MainRepository) {
         )
     }
 
-    suspend fun selectImageFile(file: FileId): ImageFile? = main.transaction(ReadOnly) {
+    suspend fun getImageFile(file: FileId): ImageFile? = main.transaction(ReadOnly) {
         val row = TImage.selectAll()
             .where { TImage.id eq file.long }
             .firstOrNull()
@@ -94,8 +93,8 @@ class FileRepository internal constructor(private val main: MainRepository) {
         )
     }
 
-    suspend fun selectFileTypes(file: FileId): FileTypes? = main.transaction(ReadOnly) {
-        val imageAsync = async { selectImageFile(file) }
+    suspend fun getFileTypes(file: FileId): FileTypes? = main.transaction(ReadOnly) {
+        val imageAsync = async { getImageFile(file) }
 
         val image = imageAsync.await()
         val types: Array<in FileType> = arrayOf(image)
@@ -111,7 +110,7 @@ class FileRepository internal constructor(private val main: MainRepository) {
         )
     }
 
-    suspend fun insert(
+    suspend fun create(
         uri: String,
         name: String?,
         owner: FileOwner,

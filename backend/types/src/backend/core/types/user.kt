@@ -1,10 +1,12 @@
 package backend.core.types
 
+import kotlinx.serialization.Serializable
 import y9to.common.types.Birthday
 import kotlin.time.Instant
 
 
 @JvmInline
+@Serializable
 value class UserId(val long: Long) : ClientId
 
 data class User(
