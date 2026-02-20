@@ -17,7 +17,7 @@ kotlin {
 
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
         api("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
-        implementation(project(":libs:paging:core"))
+        api(project(":libs:paging:core"))
         implementation(project(":libs:io"))
     }
 

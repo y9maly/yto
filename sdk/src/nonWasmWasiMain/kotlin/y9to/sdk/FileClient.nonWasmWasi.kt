@@ -13,10 +13,10 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
-import y9to.api.krpc.types.FileSink
-import y9to.api.krpc.types.FileSource
 import y9to.api.types.File
 import y9to.api.types.FileId
+import y9to.api.types.FileSink
+import y9to.api.types.FileSource
 import y9to.api.types.FileTypes
 import y9to.api.types.UploadFileError
 import y9to.libs.io.internals.DelicateIoApi
