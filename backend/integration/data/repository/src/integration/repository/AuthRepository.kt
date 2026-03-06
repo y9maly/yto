@@ -78,13 +78,13 @@ class AuthRepository internal constructor(private val main: MainRepository) {
         when (getAuthState(session)) {
             is AuthState.Unauthorized -> { /* ok */ }
             is AuthState.Authorized -> return@transaction LogInError.AlreadyLogInned.asError()
-            null -> return@transaction LogInError.UnknownSessionId.asError()
+            null -> return@transaction LogInError.InvalidSessionId.asError()
         }
 
         when (client) {
             is UserId -> {
                 if (!main.user.exists(client)) {
-                    return@transaction LogInError.UnknownClientId.asError()
+                    return@transaction LogInError.InvalidClientId.asError()
                 }
             }
         }
@@ -103,7 +103,7 @@ class AuthRepository internal constructor(private val main: MainRepository) {
         val oldAuthState = when (val it = getAuthState(session)) {
             is AuthState.Authorized -> it
             is AuthState.Unauthorized -> return@transaction LogOutError.AlreadyLogOuted.asError()
-            null -> return@transaction LogOutError.UnknownSessionId.asError()
+            null -> return@transaction LogOutError.InvalidSessionId.asError()
         }
 
         val deletedRows = TAuthState.deleteWhere { TAuthState.session eq session.long }
@@ -112,7 +112,7 @@ class AuthRepository internal constructor(private val main: MainRepository) {
             if (existsSession(session)) {
                 return@transaction LogOutError.AlreadyLogOuted.asError()
             } else {
-                return@transaction LogOutError.UnknownSessionId.asError()
+                return@transaction LogOutError.InvalidSessionId.asError()
             }
         }
 

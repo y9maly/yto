@@ -15,17 +15,17 @@ typealias SelectAuthorPostOk = Post
 
 
 sealed interface InsertPostError {
-    data object UnknownAuthorReference : InsertPostError
-    data object UnknownReplyToPostReference : InsertPostError
+    data object InvalidAuthorLink : InsertPostError
+    data object InvalidReplyToPostLink : InsertPostError
     data object InvalidInputContent : InsertPostError
     data object InvalidInputLocation : InsertPostError
 }
 
 sealed interface DeletePostError {
-    data object InvalidPostReference : DeletePostError
+    data object InvalidPostLink : DeletePostError
 }
 
 sealed interface SelectAuthorPostError {
-    data object UnknownAuthorId : SelectAuthorPostError
+    data object InvalidAuthorLink : SelectAuthorPostError
     data object AuthorHasNoPosts : SelectAuthorPostError
 }

@@ -8,9 +8,6 @@ import domain.service.result.DeletePostError
 import domain.service.result.map
 import integration.repository.MainRepository
 import integration.repository.PostRepository
-import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
-import kotlinx.serialization.modules.SerializersModule
 import y9to.libs.paging.*
 import y9to.libs.stdlib.InterfaceClass
 import y9to.libs.stdlib.asError
@@ -22,16 +19,16 @@ class PostService @InterfaceClass constructor(
     private val selector: MainSelector,
     private val clock: Clock,
 ) {
-    suspend fun get(id: PostId) = get(PostReference.Id(id))
-    suspend fun get(ref: PostReference): Post? {
-        val id = selector.select(ref) ?: return null
+    suspend fun get(id: PostId) = get(PostLink.Id(id))
+    suspend fun get(link: PostLink): Post? {
+        val id = selector.select(link) ?: return null
         return repo.post.get(id)
     }
 
     suspend fun create(
         location: InputPostLocation,
-        author: UserReference,
-        replyTo: PostReference?,
+        author: UserLink,
+        replyTo: PostLink?,
         content: InputPostContent,
     ): CreatePostResult {
         val inputContent = content.map(selector)
@@ -40,10 +37,10 @@ class PostService @InterfaceClass constructor(
             ?: return CreatePostError.InvalidInputLocation.asError()
 
         val authorId = selector.select(author)
-            ?: return CreatePostError.UnknownAuthorReference.asError()
+            ?: return CreatePostError.InvalidAuthorRef.asError()
         val replyToId = replyTo?.let {
             selector.select(replyTo)
-                ?: return CreatePostError.UnknownReplyToPostReference.asError()
+                ?: return CreatePostError.InvalidReplyRef.asError()
         }
 
         return repo.post.insert(
@@ -55,7 +52,7 @@ class PostService @InterfaceClass constructor(
         ).map()
     }
 
-    suspend fun delete(post: PostReference): DeletePostError {
+    suspend fun delete(post: PostLink): DeletePostError {
         TODO()
     }
 
@@ -112,9 +109,9 @@ private suspend fun InputPostContent.map(
         }
 
         is InputPostContent.Repost -> {
-            val originalRef = selector.select(original)
+            val originalLink = selector.select(original)
                 ?: return null
-            integration.repository.input.InputPostContent.Repost(comment, originalRef)
+            integration.repository.input.InputPostContent.Repost(comment, originalLink)
         }
     }
 }
@@ -128,9 +125,9 @@ private suspend fun InputPostLocation.map(
         }
 
         is InputPostLocation.Profile -> {
-            val userRef = selector.select(user)
+            val userLink = selector.select(user)
                 ?: return null
-            integration.repository.input.InputPostLocation.Profile(userRef)
+            integration.repository.input.InputPostLocation.Profile(userLink)
         }
     }
 }

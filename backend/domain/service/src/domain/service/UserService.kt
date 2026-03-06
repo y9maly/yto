@@ -1,10 +1,10 @@
 package domain.service
 
-import backend.core.types.UserReference
+import backend.core.types.UserLink
 import backend.core.types.FileId
 import backend.core.types.SessionId
 import backend.core.types.User
-import backend.core.types.UserDescriptor
+import backend.core.types.UserRef
 import backend.core.types.UserId
 import domain.selector.MainSelector
 import domain.service.result.*
@@ -23,15 +23,15 @@ class UserService @InterfaceClass constructor(
     private val selector: MainSelector,
     private val clock: Clock,
 ) {
-    suspend fun get(id: UserId) = get(UserReference.Id(id))
-    suspend fun get(ref: UserReference): User? {
-        val id = selector.select(ref) ?: return null
+    suspend fun get(id: UserId) = get(UserLink.Id(id))
+    suspend fun get(link: UserLink): User? {
+        val id = selector.select(link) ?: return null
         return repo.user.get(id)
     }
 
-    suspend fun exists(id: UserId) = exists(UserReference.Id(id))
-    suspend fun exists(ref: UserReference): Boolean {
-        val id = selector.select(ref) ?: return false
+    suspend fun exists(id: UserId) = exists(UserLink.Id(id))
+    suspend fun exists(link: UserLink): Boolean {
+        val id = selector.select(link) ?: return false
         return repo.user.exists(id)
     }
 
@@ -68,7 +68,7 @@ class UserService @InterfaceClass constructor(
     }
 
     suspend fun edit(
-        descriptor: UserDescriptor,
+        xxxxxx: UserRef,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -78,8 +78,8 @@ class UserService @InterfaceClass constructor(
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
     ): EditUserResult {
-        val ref = selector.select(descriptor)
-            ?: return EditUserError.InvalidUserDescriptor.asError()
+        val link = selector.select(xxxxxx)
+            ?: return EditUserError.InvalidUserRef.asError()
 
         val firstNameError = firstName.map { firstName ->
             if (firstName.isBlank())
@@ -118,7 +118,7 @@ class UserService @InterfaceClass constructor(
         }
 
         return repo.user.update(
-            ref = ref,
+            link = link,
             phoneNumber = phoneNumber,
             email = email,
             firstName = firstName,

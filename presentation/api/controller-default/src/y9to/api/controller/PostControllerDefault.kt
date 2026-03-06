@@ -1,8 +1,7 @@
 package y9to.api.controller
 
-import backend.core.types.ref
+import backend.core.types.link
 import domain.service.MainService
-import domain.service.result.DeletePostError
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -37,8 +36,8 @@ class PostControllerDefault(
 
     context(_: Context)
     override suspend fun get(input: InputPost): Post? = context {
-        val postRef = input.resolve() ?: return null
-        val post = service.post.get(postRef) ?: return null
+        val postLink = input.resolve() ?: return null
+        val post = service.post.get(postLink) ?: return null
         return post.map()
     }
 
@@ -53,7 +52,7 @@ class PostControllerDefault(
                 ?: return CreatePostError.Unauthorized.asError()
         }
 
-        val userRef = authState.userIdOrNull()?.ref()
+        val userLink = authState.userIdOrNull()?.link()
             ?: return CreatePostError.Unauthorized.asError()
 
         val replyToPost = replyTo?.resolve()
@@ -70,15 +69,15 @@ class PostControllerDefault(
                     backend.core.types.InputPostLocation.Profile(user)
                 }
             },
-            userRef,
+            userLink,
             replyToPost,
             content
         )
             .successOrElse { error ->
                 return when (error) {
                     DomainCreatePostError.InvalidInputContent -> CreatePostError.InvalidInputContent
-                    DomainCreatePostError.UnknownReplyToPostReference -> CreatePostError.UnknownReplyOption
-                    DomainCreatePostError.UnknownAuthorReference -> CreatePostError.Unauthorized
+                    DomainCreatePostError.InvalidReplyRef -> CreatePostError.InvalidInputReply
+                    DomainCreatePostError.InvalidAuthorRef -> CreatePostError.Unauthorized
                     DomainCreatePostError.InvalidInputLocation -> error("Unreachable")
                 }.asError()
             }

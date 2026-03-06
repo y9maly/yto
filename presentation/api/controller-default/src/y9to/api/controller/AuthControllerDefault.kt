@@ -75,8 +75,8 @@ class AuthControllerDefault(
             .successOrElse { error ->
                 return when (error) {
                     DomainLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
-                    DomainLogInError.UnknownSessionId -> error("Invalid token")
-                    DomainLogInError.UnknownClientId -> LogInError.UserForSpecifiedAuthMethodNotFound
+                    DomainLogInError.InvalidSessionId -> error("Invalid token")
+                    DomainLogInError.InvalidClientId -> LogInError.UserForSpecifiedAuthMethodNotFound
                 }.asError()
             }
 
@@ -89,7 +89,7 @@ class AuthControllerDefault(
             .successOrElse { error ->
                 return when (error) {
                     DomainLogOutError.AlreadyLogOuted -> LogOutError.AlreadyUnauthorized
-                    DomainLogOutError.UnknownSessionId -> error("Invalid token")
+                    DomainLogOutError.InvalidSessionId -> error("Invalid token")
                 }.asError()
             }
         return LogOutOk.asOk()

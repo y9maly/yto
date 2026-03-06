@@ -1,6 +1,6 @@
 package integration.repository
 
-import backend.core.types.UserReference
+import backend.core.types.UserLink
 import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
@@ -35,10 +35,10 @@ class UserRepository internal constructor(private val main: MainRepository) {
         return selectByPredicate { TUser.id eq id.long }
     }
 
-    suspend fun get(ref: UserReference): User? {
-        return when (ref) {
-            is UserReference.Id -> selectByPredicate { TUser.id eq ref.id.long }
-            is UserReference.Random -> getRandom()
+    suspend fun get(link: UserLink): User? {
+        return when (link) {
+            is UserLink.Id -> selectByPredicate { TUser.id eq link.id.long }
+            is UserLink.Random -> getRandom()
         }
     }
 
@@ -71,18 +71,18 @@ class UserRepository internal constructor(private val main: MainRepository) {
         fromRow(row)
     }
 
-    suspend fun exists(user: UserId) = exists(UserReference.Id(user))
-    suspend fun exists(user: UserReference): Boolean = main.transaction(ReadOnly) {
+    suspend fun exists(user: UserId) = exists(UserLink.Id(user))
+    suspend fun exists(user: UserLink): Boolean = main.transaction(ReadOnly) {
         var query = TUser
             .select(intLiteral(1))
             .limit(1)
 
         when (user) {
-            is UserReference.Id -> {
+            is UserLink.Id -> {
                 query = query.where { TUser.id eq user.id.long }
             }
 
-            UserReference.Random -> {}
+            UserLink.Random -> {}
         }
 
         query.count() > 0
@@ -132,7 +132,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
      * @return new user; null if invalid user id
      */
     suspend fun update(
-        ref: UserReference,
+        link: UserLink,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -142,11 +142,11 @@ class UserRepository internal constructor(private val main: MainRepository) {
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
     ): UpdateUserResult = main.transaction {
-        val id = main.resolve(ref)
-            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
+        val id = main.resolve(link)
+            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
 
         val oldUser = get(id)
-            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
+            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
 
         cover.onPresent { cover ->
             cover ?: return@onPresent
@@ -195,7 +195,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
         }
 
         val newUser = get(id)
-            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
+            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
 
 //        main.eventsCollector.onEvent(UserUpdated(old = oldUser, new = newUser))
 

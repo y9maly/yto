@@ -2,11 +2,10 @@ package backend.core.types
 
 import backend.core.types.Filter.Blacklist
 import backend.core.types.Filter.Whitelist
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.Serializable as S
 
 
-@Serializable
-sealed interface Filter<out PREDICATE> {
+@S sealed interface Filter<out PREDICATE> {
     /**
      * Rejects any except [accept]. Still rejects any [rejectAnyway].
      *
@@ -17,8 +16,7 @@ sealed interface Filter<out PREDICATE> {
      *   > Can accept by [accept] rule? If yes - accept.
      *   > Reject.
      */
-    @Serializable
-    data class Whitelist<out PREDICATE>(
+    @S data class Whitelist<out PREDICATE>(
         val accept: Set<PREDICATE> = emptySet(),
         val rejectAnyway: Set<PREDICATE> = emptySet(),
     ) : Filter<PREDICATE>
@@ -33,8 +31,7 @@ sealed interface Filter<out PREDICATE> {
      *   > Can reject by [reject] rule? If yes - reject.
      *   > Accept.
      */
-    @Serializable
-    data class Blacklist<out PREDICATE>(
+    @S data class Blacklist<out PREDICATE>(
         val reject: Set<PREDICATE> = emptySet(),
         val acceptAnyway: Set<PREDICATE> = emptySet(),
     ) : Filter<PREDICATE>

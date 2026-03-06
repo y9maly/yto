@@ -8,7 +8,6 @@ import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-// todo -> PostAccessHash/Ref
 @JvmInline
 @S value class PostId(val long: Long)
 

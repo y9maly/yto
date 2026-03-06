@@ -75,7 +75,6 @@ include("backend") {
 
     "types"()
     "input"()
-    "query"()
     "event"()
 
     // Domain

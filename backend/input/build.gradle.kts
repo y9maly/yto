@@ -10,5 +10,4 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":backend:types"))
-    api(project(":backend:query"))
 }

@@ -18,18 +18,18 @@ typealias GetAuthorPostOk = Post
 
 
 sealed interface CreatePostError {
-    data object UnknownAuthorReference : CreatePostError
-    data object UnknownReplyToPostReference : CreatePostError
+    data object InvalidAuthorRef : CreatePostError
+    data object InvalidReplyRef : CreatePostError
     data object InvalidInputContent : CreatePostError
     data object InvalidInputLocation : CreatePostError
 }
 
 sealed interface DeletePostError {
-    data object InvalidPostReference : DeletePostError
+    data object InvalidPostRef : DeletePostError
 }
 
 sealed interface GetAuthorPostError {
-    data object UnknownAuthorId : GetAuthorPostError
+    data object InvalidAuthorRef : GetAuthorPostError
     data object AuthorHasNoPosts : GetAuthorPostError
 }
 
@@ -37,7 +37,7 @@ sealed interface GetAuthorPostError {
 fun InsertPostResult.map() = mapError { map() }
 fun InsertPostError.map() = when (this) {
     InsertPostError.InvalidInputContent -> CreatePostError.InvalidInputContent
-    InsertPostError.UnknownAuthorReference -> CreatePostError.UnknownAuthorReference
-    InsertPostError.UnknownReplyToPostReference -> CreatePostError.UnknownReplyToPostReference
+    InsertPostError.InvalidAuthorLink -> CreatePostError.InvalidAuthorRef
+    InsertPostError.InvalidReplyToPostLink -> CreatePostError.InvalidReplyRef
     InsertPostError.InvalidInputLocation -> CreatePostError.InvalidInputLocation
 }

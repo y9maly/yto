@@ -8,7 +8,6 @@ import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-// todo -> UserAccessHash/Ref
 /**
  * Почему это data class?
  *

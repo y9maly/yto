@@ -1,11 +1,13 @@
 package backend.core.types
 
+import kotlinx.serialization.Serializable as S
+
 
 @RequiresOptIn("This api will be removed in the future")
 annotation class TemporaryRevisionApi
 
 @OptIn(TemporaryRevisionApi::class)
-data class Revision(
+@S data class Revision(
     @property:TemporaryRevisionApi
     val long: Long
 ) : Comparable<Revision> {

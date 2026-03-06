@@ -12,5 +12,4 @@ dependencies {
     api(project(":backend:event"))
     api(project(":backend:types"))
     api(project(":backend:input"))
-    api(project(":backend:query"))
 }

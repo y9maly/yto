@@ -15,6 +15,6 @@ typealias CreatePostOk = Post
 
 @S sealed interface CreatePostError {
     @S data object Unauthorized : CreatePostError
-    @S data object UnknownReplyOption : CreatePostError
+    @S data object InvalidInputReply : CreatePostError
     @S data object InvalidInputContent : CreatePostError
 }

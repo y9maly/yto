@@ -1,6 +1,6 @@
 package y9to.api.controller
 
-import backend.core.types.UserReference
+import backend.core.types.UserLink
 import domain.service.MainService
 import domain.service.result.*
 import presentation.assembler.MainAssembler
@@ -36,9 +36,9 @@ class UserControllerDefault(
 
     context(_: Context)
     override suspend fun get(input: InputUser): User? = context {
-        val userRef = input.resolve()
+        val userLink = input.resolve()
             ?: return null
-        val user = service.user.get(userRef)
+        val user = service.user.get(userLink)
             ?: return null
         return user.mapAsUser()
     }
@@ -71,7 +71,7 @@ class UserControllerDefault(
         val avatar = avatar.map { it?.map() }
 
         service.user.edit(
-            descriptor = UserReference.Id(userId),
+            xxxxxx = UserLink.Id(userId),
             firstName = firstName,
             lastName = lastName,
             bio = bio,
@@ -80,7 +80,7 @@ class UserControllerDefault(
             avatar = avatar,
         ).onError { error ->
             return when (error) {
-                is EditUserError.InvalidUserDescriptor -> error("Unreachable")
+                is EditUserError.InvalidUserRef -> error("Unreachable")
                 is EditUserError.FieldErrors -> error.map().asError()
             }
         }

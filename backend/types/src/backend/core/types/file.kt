@@ -1,12 +1,13 @@
 package backend.core.types
 
 import kotlin.time.Instant
+import kotlinx.serialization.Serializable as S
 
 
 @JvmInline
-value class FileId(val long: Long)
+@S value class FileId(val long: Long)
 
-data class File(
+@S data class File(
     val id: FileId,
     val uri: String,
     val name: String?,
@@ -16,12 +17,12 @@ data class File(
     val owner: FileOwner,
 )
 
-sealed interface FileOwner {
-    data object Unknown : FileOwner
-    data class User(val user: UserId, val session: SessionId?) : FileOwner
+@S sealed interface FileOwner {
+    @S data object Unknown : FileOwner
+    @S data class User(val user: UserId, val session: SessionId?) : FileOwner
 }
 
-data class ClientStorageQuota(
+@S data class ClientStorageQuota(
     val totalBytes: Long,
     val usedBytes: Long,
 ) {
@@ -29,9 +30,9 @@ data class ClientStorageQuota(
 }
 
 
-sealed interface FileType
+@S sealed interface FileType
 
-data class FileTypes(
+@S data class FileTypes(
     val image: ImageFile?,
 ) {
     companion object {
@@ -40,7 +41,7 @@ data class FileTypes(
 }
 
 
-data class ImageFile(
+@S data class ImageFile(
     val file: FileId,
     val format: ImageFileFormat,
     val width: Int?,
@@ -49,7 +50,7 @@ data class ImageFile(
 
 
 @JvmInline
-value class ImageFileFormat(val name: String) {
+@S value class ImageFileFormat(val name: String) {
     companion object
 }
 

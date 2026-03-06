@@ -15,7 +15,7 @@ data class EditUserOk(val new: User)
 
 
 sealed interface EditUserError {
-    data object InvalidUserDescriptor : EditUserError
+    data object InvalidUserRef : EditUserError
 
     data class FieldErrors(
         val firstNameError: EditUserNameError? = null,
@@ -52,7 +52,7 @@ sealed interface EditUserAvatarError {
 fun UpdateUserResult.map() = mapBoth({ map() }, { map() })
 fun UpdateUserOk.map() = EditUserOk(new)
 fun UpdateUserError.map() = when (this) {
-    UpdateUserError.InvalidUserReference -> EditUserError.InvalidUserDescriptor
+    UpdateUserError.InvalidUserLink -> EditUserError.InvalidUserRef
     UpdateUserError.InvalidCoverFileId -> EditUserError.FieldErrors(coverError = EditUserCoverError.InvalidFile)
     UpdateUserError.InvalidAvatarFileId -> EditUserError.FieldErrors(avatarError = EditUserAvatarError.InvalidFile)
 }

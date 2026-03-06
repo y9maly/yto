@@ -18,13 +18,13 @@ typealias LogOutOk = Unit
 
 sealed interface LogInError {
     data object AlreadyLogInned : LogInError
-    data object UnknownSessionId : LogInError
-    data object UnknownClientId : LogInError
+    data object InvalidSessionId : LogInError
+    data object InvalidClientId : LogInError
 }
 
 sealed interface LogOutError {
     data object AlreadyLogOuted : LogOutError
-    data object UnknownSessionId : LogOutError
+    data object InvalidSessionId : LogOutError
 }
 
 
@@ -32,13 +32,13 @@ sealed interface LogOutError {
 fun DbLogInResult.map() = mapError { map() }
 fun DbLogInError.map() = when (this) {
     DbLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
-    DbLogInError.UnknownClientId -> LogInError.UnknownClientId
-    DbLogInError.UnknownSessionId -> LogInError.UnknownSessionId
+    DbLogInError.InvalidClientId -> LogInError.InvalidClientId
+    DbLogInError.InvalidSessionId -> LogInError.InvalidSessionId
 }
 
 @JvmName("mapLogOutResult")
 fun DbLogOutResult.map() = mapError { map() }
 fun DbLogOutError.map() = when (this) {
     DbLogOutError.AlreadyLogOuted -> LogOutError.AlreadyLogOuted
-    DbLogOutError.UnknownSessionId -> LogOutError.UnknownSessionId
+    DbLogOutError.InvalidSessionId -> LogOutError.InvalidSessionId
 }

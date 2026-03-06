@@ -1,9 +1,7 @@
 package domain.selector
 
-import backend.core.types.PostDescriptor
-import backend.core.types.PostReference
-import backend.core.types.UserDescriptor
-import backend.core.types.UserReference
+import backend.core.types.PostRef
+import backend.core.types.UserRef
 import integration.repository.MainRepository
 import y9to.libs.stdlib.InterfaceClass
 
@@ -14,6 +12,6 @@ class MainSelector(
 ) {
     val post = PostSelector(this, repo)
     val user = UserSelector(repo)
-    suspend fun select(descriptor: PostDescriptor) = post.select(descriptor)
-    suspend fun select(descriptor: UserDescriptor) = user.select(descriptor)
+    suspend fun select(ref: PostRef) = post.select(ref)
+    suspend fun select(ref: UserRef) = user.select(ref)
 }

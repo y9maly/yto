@@ -3,18 +3,18 @@ package backend.core.types
 import kotlinx.serialization.Serializable as S
 
 
-sealed interface UserDescriptor {
-//    data class BestFriend(val ofUser: UserId) : UserDescriptor
+@S sealed interface UserRef {
+//    data class BestFriend(val ofUser: UserId) : UserRef
 }
 
-sealed interface UserReference : UserDescriptor {
-    data class Id(val id: UserId) : UserReference
-    data object Random : UserReference
+@S sealed interface UserLink : UserRef {
+    @S data class Id(val id: UserId) : UserLink
+    @S data object Random : UserLink
     // RandomSubscriber...
     // RandomFriend...
 }
 
-fun UserId.ref() = UserReference.Id(this)
+fun UserId.link() = UserLink.Id(this)
 
 typealias UserFilter = Filter<UserPredicate>
 @S sealed interface UserPredicate {

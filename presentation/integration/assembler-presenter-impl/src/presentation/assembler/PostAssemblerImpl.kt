@@ -1,8 +1,8 @@
 package presentation.assembler
 
 import backend.core.types.InputPostContent
-import backend.core.types.PostReference
-import backend.core.types.UserReference
+import backend.core.types.PostLink
+import backend.core.types.UserLink
 import domain.service.MainService
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
@@ -15,9 +15,9 @@ class PostAssemblerImpl(
     private val service: MainService,
 ) : PostAssembler {
     context(context: Context)
-    override suspend fun resolve(input: InputPost): PostReference? {
+    override suspend fun resolve(input: InputPost): PostLink? {
         if (input is InputPost.Id)
-            return PostReference.Id(input.id.map())
+            return PostLink.Id(input.id.map())
 
         val authState = authStateOrPut {
             service.auth.getAuthState(sessionId)
@@ -25,12 +25,12 @@ class PostAssemblerImpl(
         }
         val selfId = authState.userIdOrNull()
             ?: error("Unauthenticated")
-        val selfRef = UserReference.Id(selfId)
+        val selfLink = UserLink.Id(selfId)
 
         return when (input) {
-            is InputPost.MyFirstPost -> PostReference.FirstOfAuthor(selfRef)
-            is InputPost.MyRandomPost -> PostReference.RandomOfAuthor(selfRef)
-            is InputPost.MyLastPost -> PostReference.LastOfAuthor(selfRef)
+            is InputPost.MyFirstPost -> PostLink.FirstOfAuthor(selfLink)
+            is InputPost.MyRandomPost -> PostLink.RandomOfAuthor(selfLink)
+            is InputPost.MyLastPost -> PostLink.LastOfAuthor(selfLink)
         }
     }
 
@@ -42,12 +42,12 @@ class PostAssemblerImpl(
             }
 
             is y9to.api.types.InputPostContent.Repost -> {
-                val originalRef = resolve(input.original)
+                val originalLink = resolve(input.original)
                     ?: return null
 
                 return InputPostContent.Repost(
                     comment = input.comment,
-                    original = originalRef,
+                    original = originalLink,
                 )
             }
         }

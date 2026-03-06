@@ -1,6 +1,6 @@
 package presentation.assembler
 
-import backend.core.types.UserReference
+import backend.core.types.UserLink
 import backend.core.types.UserId
 import domain.service.MainService
 import presentation.integration.context.Context
@@ -12,10 +12,10 @@ class UserAssemblerImpl(
     private val service: MainService,
 ) : UserAssembler {
     context(context: Context)
-    override suspend fun resolve(input: InputUser): UserReference? {
+    override suspend fun resolve(input: InputUser): UserLink? {
         when (input) {
             is InputUser.Id -> {
-                return UserReference.Id(input.id.map())
+                return UserLink.Id(input.id.map())
             }
         }
     }

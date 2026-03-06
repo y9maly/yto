@@ -11,7 +11,6 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":backend:types"))
-    api(project(":backend:query"))
     api(project(":libs:paging:core"))
 
     // Implementation

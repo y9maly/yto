@@ -15,7 +15,6 @@ import integration.repository.internalResolve.resolve
 import integration.repository.internals.FilterOp
 import integration.repository.internals.RandomFunction
 import integration.repository.internals.andFilter
-import integration.repository.result.DeletePostError
 import integration.repository.result.DeletePostResult
 import integration.repository.result.InsertPostError
 import integration.repository.result.InsertPostResult
@@ -51,24 +50,24 @@ class PostRepository internal constructor(
         val cursor: PostId,
     )
 
-    suspend fun get(id: PostId) = get(PostReference.Id(id))
+    suspend fun get(id: PostId) = get(PostLink.Id(id))
 
     //
 
-    suspend fun get(ref: PostReference): Post? = main.transaction(ReadOnly) {
+    suspend fun get(link: PostLink): Post? = main.transaction(ReadOnly) {
         var query = VPost.selectAll()
             .limit(1)
 
-        query = when (ref) {
-            is PostReference.Id -> query
-                .where(VPost.id eq ref.id.long)
+        query = when (link) {
+            is PostLink.Id -> query
+                .where(VPost.id eq link.id.long)
 
-            is PostReference.RandomOf -> {
+            is PostLink.RandomOf -> {
                 TODO()
             }
 
-            is PostReference.FirstOfAuthor -> {
-                val author = main.user.get(ref.author)?.id
+            is PostLink.FirstOfAuthor -> {
+                val author = main.user.get(link.author)?.id
                     ?: return@transaction null
 
                 query
@@ -76,8 +75,8 @@ class PostRepository internal constructor(
                     .orderBy(VPost.created_at to SortOrder.ASC)
             }
 
-            is PostReference.RandomOfAuthor -> {
-                val author = main.user.get(ref.author)?.id
+            is PostLink.RandomOfAuthor -> {
+                val author = main.user.get(link.author)?.id
                     ?: return@transaction null
 
                 query
@@ -85,8 +84,8 @@ class PostRepository internal constructor(
                     .orderBy(RandomFunction() to SortOrder.ASC)
             }
 
-            is PostReference.LastOfAuthor -> {
-                val author = main.user.get(ref.author)?.id
+            is PostLink.LastOfAuthor -> {
+                val author = main.user.get(link.author)?.id
                     ?: return@transaction null
 
                 query
@@ -94,13 +93,13 @@ class PostRepository internal constructor(
                     .orderBy(VPost.created_at to SortOrder.DESC)
             }
 
-            is PostReference.First -> query
+            is PostLink.First -> query
                 .orderBy(VPost.created_at to SortOrder.ASC)
 
-            is PostReference.Random -> query
+            is PostLink.Random -> query
                 .orderBy(RandomFunction() to SortOrder.ASC)
 
-            is PostReference.Last -> query
+            is PostLink.Last -> query
                 .orderBy(VPost.created_at to SortOrder.DESC)
         }
 
@@ -118,27 +117,27 @@ class PostRepository internal constructor(
     suspend fun insert(
         location: InputPostLocation,
         creationDate: Instant,
-        author: UserReference,
-        replyTo: PostReference?,
+        author: UserLink,
+        replyTo: PostLink?,
         content: InputPostContent,
     ): InsertPostResult = main.transaction {
         val replyTo = replyTo?.let {
             main.resolve(replyTo)
-                ?: return@transaction InsertPostError.UnknownReplyToPostReference.asError()
+                ?: return@transaction InsertPostError.InvalidReplyToPostLink.asError()
         }
 
         val author = author.let {
             main.resolve(author)
-                ?: return@transaction InsertPostError.UnknownAuthorReference.asError()
+                ?: return@transaction InsertPostError.InvalidAuthorLink.asError()
         }
 
         //
 
         if (!main.user.exists(author))
-            return@transaction InsertPostError.UnknownAuthorReference.asError()
+            return@transaction InsertPostError.InvalidAuthorLink.asError()
 
         if (replyTo != null && !exists(replyTo))
-            return@transaction InsertPostError.UnknownReplyToPostReference.asError()
+            return@transaction InsertPostError.InvalidReplyToPostLink.asError()
 
         if (location is InputPostLocation.Profile) {
             if (!main.user.exists(location.user))
@@ -185,7 +184,7 @@ class PostRepository internal constructor(
         get(id)!!.asOk()
     }
 
-    suspend fun delete(post: PostReference): DeletePostResult = main.transaction {
+    suspend fun delete(post: PostLink): DeletePostResult = main.transaction {
         TODO()
     }
 
