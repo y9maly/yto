@@ -1,5 +1,6 @@
 plugins {
     id("kmp-conventions")
+    kotlin("plugin.serialization")
     id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
     `maven-publish`
 }
@@ -14,6 +15,7 @@ kotlin {
         api(project(":presentation:input"))
         api(project(":presentation:result"))
         api(project(":presentation:api:krpc"))
+        api(project(":presentation:api:endpoint"))
 
         api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
         api("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")

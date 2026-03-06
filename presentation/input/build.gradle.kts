@@ -15,7 +15,7 @@ kotlin {
         api(project(":presentation:types"))
         api(project(":common:types"))
         api("org.jetbrains.kotlinx:kotlinx-datetime:0.7.1")
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
     }
 }
 

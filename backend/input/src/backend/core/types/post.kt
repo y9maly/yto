@@ -3,12 +3,12 @@ package backend.core.types
 
 sealed interface InputPostLocation {
     data object Global : InputPostLocation
-    data class Profile(val user: UserReference) : InputPostLocation
+    data class Profile(val user: UserDescriptor) : InputPostLocation
 }
 
 sealed interface InputPostContent {
     data class Standalone(val text: String) : InputPostContent
-    data class Repost(val comment: String?, val original: PostReference) : InputPostContent
+    data class Repost(val comment: String?, val original: PostDescriptor) : InputPostContent
 }
 
 val InputPostContent.type get() = when (this) {

@@ -1,5 +1,6 @@
 [versions]
-kotlinx-rpc = "0.10.1"
+kotlinx-rpc = "0.10.2"
+kotlin = "2.3.10"
 
 [libraries]
 kotlinx-rpc-core = { module = "org.jetbrains.kotlinx:kotlinx-rpc-core", version.ref = "kotlinx-rpc" }

@@ -1,4 +1,6 @@
 secret.txt
+.files
+.testFiles
 local.properties
 .run
 .gradle

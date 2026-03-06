@@ -11,5 +11,5 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":backend:types"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
 }

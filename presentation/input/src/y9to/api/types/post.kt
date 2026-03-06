@@ -5,6 +5,10 @@ package y9to.api.types
 import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmName
 
+@S sealed interface InputFeed {
+    @S data object Global : InputFeed
+    @S data class Profile(val user: UserId) : InputFeed
+}
 
 @S sealed interface InputPost {
     @S data class Id(val id: PostId) : InputPost
@@ -12,6 +16,11 @@ import kotlin.jvm.JvmName
     @S data object MyFirstPost : InputPost
     @S data object MyRandomPost : InputPost
 //    data class Access(val access: PostAccess) : InputPost
+}
+
+@S sealed interface InputPostLocation {
+    @S data object Global : InputPostLocation
+    @S data class Profile(val user: InputUser) : InputPostLocation
 }
 
 @S sealed interface InputPostContent {

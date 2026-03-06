@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 repositories {
@@ -15,6 +16,7 @@ dependencies {
     api(project(":backend:query"))
     api(project(":backend:event"))
     implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
 
     // Implementation
 

@@ -4,6 +4,7 @@ import backend.core.types.UserReference
 import backend.core.types.FileId
 import backend.core.types.SessionId
 import backend.core.types.User
+import backend.core.types.UserDescriptor
 import backend.core.types.UserId
 import domain.selector.MainSelector
 import domain.service.result.*
@@ -67,7 +68,7 @@ class UserService @InterfaceClass constructor(
     }
 
     suspend fun edit(
-        ref: UserReference,
+        descriptor: UserDescriptor,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -77,8 +78,8 @@ class UserService @InterfaceClass constructor(
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
     ): EditUserResult {
-        val id = selector.select(ref)
-            ?: return EditUserError.UnknownUserReference.asError()
+        val ref = selector.select(descriptor)
+            ?: return EditUserError.InvalidUserDescriptor.asError()
 
         val firstNameError = firstName.map { firstName ->
             if (firstName.isBlank())
@@ -117,7 +118,7 @@ class UserService @InterfaceClass constructor(
         }
 
         return repo.user.update(
-            id = id,
+            ref = ref,
             phoneNumber = phoneNumber,
             email = email,
             firstName = firstName,

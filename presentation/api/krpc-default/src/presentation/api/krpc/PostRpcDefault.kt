@@ -5,10 +5,9 @@ import presentation.authenticator.Authenticator
 import presentation.integration.context.Context
 import y9to.api.controller.PostController
 import y9to.api.krpc.PostRpc
-import y9to.api.types.InputPost
-import y9to.api.types.InputPostContent
-import y9to.api.types.Token
-import y9to.api.types.UserId
+import y9to.api.types.*
+import y9to.libs.paging.Cursor
+import y9to.libs.paging.Slice
 import y9to.libs.paging.SliceKey
 
 
@@ -21,21 +20,16 @@ class PostRpcDefault(
 
     override suspend fun create(
         token: Token,
+        location: InputPostLocation,
         replyTo: InputPost?,
-        content: InputPostContent
-    ) = authenticate(token) { create(replyTo, content) }
+        content: InputPostContent,
+    ) = authenticate(token) { create(location, replyTo, content) }
 
-    override suspend fun sliceGlobal(
+    override suspend fun sliceFeed(
         token: Token,
-        key: SliceKey<Unit>,
-        limit: Int
-    ) = authenticate(token) { sliceGlobal(key, limit) }
-
-    override suspend fun sliceProfile(
-        token: Token,
-        key: SliceKey<UserId>,
+        key: SliceKey<InputFeed, Cursor>,
         limit: Int,
-    ) = authenticate(token) { sliceProfile(key, limit) }
+    ) = authenticate(token) { sliceFeed(key, limit) }
 
     private suspend inline fun <R> authenticate(token: Token, block: context(Context) PostController.() -> R) =
         authenticate(authenticator, token) { block(this, controller) }

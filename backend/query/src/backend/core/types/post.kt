@@ -2,7 +2,6 @@ package backend.core.types
 
 import kotlinx.serialization.Serializable as S
 
-
 sealed interface PostDescriptor {
 //    data class FirstOfAuthor(val author: UserDescriptor) : PostDescriptor
 //    data class RandomOfAuthor(val author: UserDescriptor) : PostDescriptor

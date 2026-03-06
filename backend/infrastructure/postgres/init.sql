@@ -105,6 +105,16 @@ create type scheduled_post_content_type as enum ('standalone', 'repost');
 create table post (
     id bigint generated always as identity primary key,
     revision revision,
+
+    -- true/null      if post is in global feed
+    -- false/notNull  if post is in user profile
+    location_global boolean not null,
+    location_profile bigint references users on delete cascade on update cascade,
+    check (
+        (location_global = true AND location_profile is null) OR
+        (location_global = false AND location_profile is not null)
+    ),
+
     created_at timestamp not null,
     author bigint references users on delete cascade on update cascade,
     reply_to bigint references post on update cascade,
@@ -133,6 +143,8 @@ create or replace view view_post as (
     select
         p.id,
         p.revision,
+        p.location_global,
+        p.location_profile,
         p.created_at,
         p.last_edit_date,
         p.content_type,

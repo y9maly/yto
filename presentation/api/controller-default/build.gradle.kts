@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
 }
 
@@ -9,6 +10,7 @@ repositories {
 
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
 kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
+kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-sensitive-resolution")
 
 dependencies {
     api(project(":backend:domain:service"))
@@ -17,4 +19,6 @@ dependencies {
     api(project(":presentation:integration:presenter"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 }

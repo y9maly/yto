@@ -18,7 +18,7 @@ kotlin {
         api(project(":presentation:result"))
         implementation(project(":libs:paging:core"))
         implementation(libs.kotlinx.rpc.core)
-        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+        implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
     }
 }
 

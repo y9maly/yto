@@ -71,7 +71,7 @@ class UserControllerDefault(
         val avatar = avatar.map { it?.map() }
 
         service.user.edit(
-            ref = UserReference.Id(userId),
+            descriptor = UserReference.Id(userId),
             firstName = firstName,
             lastName = lastName,
             bio = bio,
@@ -80,7 +80,7 @@ class UserControllerDefault(
             avatar = avatar,
         ).onError { error ->
             return when (error) {
-                is EditUserError.UnknownUserReference -> error("Unreachable")
+                is EditUserError.InvalidUserDescriptor -> error("Unreachable")
                 is EditUserError.FieldErrors -> error.map().asError()
             }
         }

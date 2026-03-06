@@ -1,7 +1,9 @@
 package y9to.api.krpc
 
 import kotlinx.rpc.annotations.Rpc
+import kotlinx.serialization.Serializable
 import y9to.api.types.*
+import y9to.libs.paging.Cursor
 import y9to.libs.paging.Slice
 import y9to.libs.paging.SliceKey
 
@@ -12,20 +14,14 @@ interface PostRpc {
 
     suspend fun create(
         token: Token,
+        location: InputPostLocation,
         replyTo: InputPost?,
         content: InputPostContent,
     ): CreatePostResult
 
-    suspend fun sliceGlobal(
+    suspend fun sliceFeed(
         token: Token,
-        key: SliceKey<Unit>,
+        key: SliceKey<InputFeed, Cursor>,
         limit: Int,
-    ): Slice<Post>
-
-    suspend fun sliceProfile(
-        token: Token,
-        key: SliceKey<UserId>,
-        limit: Int,
-    ): Slice<Post>?
+    ): Slice<Cursor?, Post>
 }
-

@@ -17,5 +17,5 @@ dependencies {
     // Implementation
 
     implementation(project(":backend:infrastructure:postgres"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 }

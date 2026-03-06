@@ -2,21 +2,7 @@
 
 package integration.repository
 
-import backend.core.types.Post
-import backend.core.types.PostAuthorPreview
-import backend.core.types.PostContent
-import backend.core.types.PostContentType
-import backend.core.types.PostFilter
-import backend.core.types.PostId
-import backend.core.types.PostLocation
-import backend.core.types.PostLocationPredicate
-import backend.core.types.PostPredicate
-import backend.core.types.PostReference
-import backend.core.types.PostReplyHeader
-import backend.core.types.RepostPreview
-import backend.core.types.UserId
-import backend.core.types.UserPredicate
-import backend.core.types.UserPreview
+import backend.core.types.*
 import backend.infra.postgres.table.TPost
 import backend.infra.postgres.table.TPostRepost
 import backend.infra.postgres.table.TPostStandalone
@@ -25,46 +11,46 @@ import backend.infra.postgres.view.VPost
 import integration.repository.input.InputPostContent
 import integration.repository.input.InputPostLocation
 import integration.repository.input.type
+import integration.repository.internalResolve.resolve
 import integration.repository.internals.FilterOp
 import integration.repository.internals.RandomFunction
 import integration.repository.internals.andFilter
+import integration.repository.result.DeletePostError
+import integration.repository.result.DeletePostResult
 import integration.repository.result.InsertPostError
 import integration.repository.result.InsertPostResult
-import integration.repository.result.SelectAuthorPostError
-import integration.repository.result.SelectAuthorPostResult
 import integration.repository.types.DeletedPost
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.toList
-import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.StringFormat
 import kotlinx.serialization.json.Json
-import org.jetbrains.exposed.v1.core.ResultRow
-import org.jetbrains.exposed.v1.core.SortOrder
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.inList
-import org.jetbrains.exposed.v1.core.intLiteral
-import org.jetbrains.exposed.v1.core.less
-import org.jetbrains.exposed.v1.r2dbc.Query
-import org.jetbrains.exposed.v1.r2dbc.andWhere
-import org.jetbrains.exposed.v1.r2dbc.insert
-import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
-import org.jetbrains.exposed.v1.r2dbc.select
-import org.jetbrains.exposed.v1.r2dbc.selectAll
-import y9to.libs.paging.PagingKey
-import y9to.libs.paging.SerializablePagingKey
-import y9to.libs.paging.SerializedPagingKey
+import org.jetbrains.exposed.v1.core.*
+import org.jetbrains.exposed.v1.r2dbc.*
+import y9to.libs.paging.*
 import y9to.libs.paging.Slice
-import y9to.libs.paging.SliceKey
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
-import kotlin.io.encoding.Base64
 import kotlin.time.Instant
 
 
-class PostRepository internal constructor(private val main: MainRepository) {
+class PostRepository internal constructor(
+    private val main: MainRepository,
+    private val cursorPayloadFormat: StringFormat = Json,
+) {
+    @Serializable
+    data class SliceOptions(val filter: PostFilter)
+
+    @Serializable
+    private data class CursorPayload(
+        val filter: PostFilter, // from SliceOptions
+        val date: Instant,
+        val cursor: PostId,
+    )
+
     suspend fun get(id: PostId) = get(PostReference.Id(id))
 
     //
@@ -122,34 +108,6 @@ class PostRepository internal constructor(private val main: MainRepository) {
         fromVPost(row)
     }
 
-    data class SelectOptions(val filter: PostFilter, val sortOption: Nothing?)
-
-    @Serializable
-    data class SelectPagingKey(val filter: PostFilter) : SerializablePagingKey {
-        override fun serialize() = SerializedPagingKey(Json.encodeToString(this))
-
-        companion object {
-            fun of(pagingKey: PagingKey): SelectPagingKey {
-                if (pagingKey is SelectPagingKey)
-                    return pagingKey
-                if (pagingKey !is SerializedPagingKey)
-                    error("Invalid PagingKey")
-                return Json.decodeFromString(pagingKey.string)
-            }
-        }
-    }
-
-    suspend fun select(key: SliceKey<SelectOptions>, limit: Int): List<Post> = main.transaction(ReadOnly) {
-        val rows = VPost.selectAll()
-            .andFilter(key.fold(
-                initialize = { it.filter },
-                next = { SelectPagingKey.of(it).filter }
-            ))
-            .limit(limit)
-            .toList()
-        rows.map { fromVPost(it) }
-    }
-
     suspend fun exists(id: PostId): Boolean = main.transaction(ReadOnly) {
         TPost.select(intLiteral(1))
             .where { TPost.id eq id.long }
@@ -160,34 +118,46 @@ class PostRepository internal constructor(private val main: MainRepository) {
     suspend fun insert(
         location: InputPostLocation,
         creationDate: Instant,
-        author: UserId,
-        replyTo: PostId?,
+        author: UserReference,
+        replyTo: PostReference?,
         content: InputPostContent,
     ): InsertPostResult = main.transaction {
+        val replyTo = replyTo?.let {
+            main.resolve(replyTo)
+                ?: return@transaction InsertPostError.UnknownReplyToPostReference.asError()
+        }
+
+        val author = author.let {
+            main.resolve(author)
+                ?: return@transaction InsertPostError.UnknownAuthorReference.asError()
+        }
+
+        //
+
         if (!main.user.exists(author))
-            return@transaction InsertPostError.UnknownAuthorId.asError()
+            return@transaction InsertPostError.UnknownAuthorReference.asError()
 
         if (replyTo != null && !exists(replyTo))
-            return@transaction InsertPostError.UnknownReplyToPostId.asError()
+            return@transaction InsertPostError.UnknownReplyToPostReference.asError()
 
         if (location is InputPostLocation.Profile) {
             if (!main.user.exists(location.user))
                 return@transaction InsertPostError.InvalidInputLocation.asError()
         }
 
-        val id = TPost.insertAndGetId {
-            when (location) {
-                is InputPostLocation.Global -> {
-                    it[TPost.location_global] = true
-                    it[TPost.location_profile] = null
-                }
+        val (location_global, location_profile) = when (location) {
+            is InputPostLocation.Global -> true to null
 
-                is InputPostLocation.Profile -> {
-                    it[TPost.location_global] = false
-                    it[TPost.location_profile] = location.user.long
-                }
+            is InputPostLocation.Profile -> {
+                val userId = main.resolve(location.user)
+                    ?: return@transaction InsertPostError.InvalidInputLocation.asError()
+                false to userId.long
             }
+        }
 
+        val id = TPost.insertAndGetId {
+            it[TPost.location_global] = location_global
+            it[TPost.location_profile] = location_profile
             it[TPost.created_at] = creationDate
             it[TPost.author] = author.long
             it[TPost.reply_to] = replyTo?.long
@@ -200,65 +170,45 @@ class PostRepository internal constructor(private val main: MainRepository) {
                 it[TPostStandalone.text] = content.text
             }
 
-            is InputPostContent.Repost -> TPostRepost.insert {
-                it[TPostRepost.id] = id.long
-                it[TPostRepost.comment] = content.comment
-                it[TPostRepost.original] = content.original.long
+            is InputPostContent.Repost -> {
+                val originalId = main.resolve(content.original)
+                    ?: return@transaction InsertPostError.InvalidInputContent.asError()
+
+                TPostRepost.insert {
+                    it[TPostRepost.id] = id.long
+                    it[TPostRepost.comment] = content.comment
+                    it[TPostRepost.original] = originalId.long
+                }
             }
         }
 
         get(id)!!.asOk()
     }
 
-    @Serializable
-    @OptIn(ExperimentalSerializationApi::class)
-    private data class SlicePagingKey(
-        val date: Instant,
-        val cursor: PostId,
-        val filter: PostFilter,
-    ) : SerializablePagingKey {
-        override fun serialize() = SerializedPagingKey(
-            Base64.UrlSafe.encode(Json.encodeToString(this).toByteArray())
-                .replace('=', '_')
-        )
-
-        companion object {
-            fun of(pagingKey: PagingKey): SlicePagingKey {
-                if (pagingKey is SlicePagingKey)
-                    return pagingKey
-                if (pagingKey !is SerializedPagingKey)
-                    error("Invalid PagingKey")
-                val string = Base64.UrlSafe.decode(pagingKey.string.replace('_', '=')).toString(Charsets.UTF_8)
-                return Json.decodeFromString(string)
-            }
-        }
+    suspend fun delete(post: PostReference): DeletePostResult = main.transaction {
+        TODO()
     }
 
     suspend fun slice(
-        key: SliceKey<PostFilter>,
+        key: SliceKey<SliceOptions, Cursor>,
         limit: Int,
-    ): Slice<Post> = main.transaction(ReadOnly) {
+    ): Slice<Cursor?, Post> = main.transaction(ReadOnly) {
+        val key = key.decodePayload<CursorPayload, _>(cursorPayloadFormat)
+
+        val filter = key.optionsOrNull()?.filter ?: key.cursor().filter
+
         var query = VPost.selectAll()
             .orderBy(VPost.created_at to SortOrder.DESC, VPost.id to SortOrder.ASC)
             .limit(limit)
 
-        val filter = key.fold(
-            initialize = { it },
-            next = { SlicePagingKey.of(it).filter }
-        )
+        query = query.andFilter(filter)
 
-        key.fold(
-            initialize = {},
-            next = {
-                val cursor = SlicePagingKey.of(it)
-                query = query.andWhere {
-                    (VPost.created_at less cursor.date) //or
-//                    ((VPost.created_at eq cursor.date) and (VPost.id greater cursor.cursor.long))
-                }
-
-                query = query.andFilter(filter)
+        key.onNext { cursor ->
+            query = query.andWhere {
+                (VPost.created_at less cursor.date) or
+                ((VPost.created_at eq cursor.date) and (VPost.id greater cursor.cursor.long))
             }
-        )
+        }
 
         val rows = query.toList()
 
@@ -268,15 +218,15 @@ class PostRepository internal constructor(private val main: MainRepository) {
         }
 
         val last = rows.lastOrNull()
-        val nextPagingKey =
+        val nextPayload =
             if (last != null && list.size == limit)
-                SlicePagingKey(
+                CursorPayload(
                     date = last[VPost.created_at],
                     cursor = PostId(last[VPost.id].value),
                     filter = filter,
                 )
             else null
-        Slice(list, nextPagingKey)
+        Slice(list, Cursor.encodePayloadIfNotNull(cursorPayloadFormat, nextPayload))
     }
 }
 

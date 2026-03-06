@@ -5,6 +5,7 @@ import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
 import backend.infra.postgres.table.TUser
+import integration.repository.internalResolve.resolve
 import integration.repository.internals.FirstRevision
 import integration.repository.internals.RandomFunction
 import integration.repository.result.UpdateUserError
@@ -70,12 +71,21 @@ class UserRepository internal constructor(private val main: MainRepository) {
         fromRow(row)
     }
 
-    suspend fun exists(user: UserId): Boolean = main.transaction(ReadOnly) {
-        TUser
+    suspend fun exists(user: UserId) = exists(UserReference.Id(user))
+    suspend fun exists(user: UserReference): Boolean = main.transaction(ReadOnly) {
+        var query = TUser
             .select(intLiteral(1))
-            .where { TUser.id eq user.long }
             .limit(1)
-            .count() > 0
+
+        when (user) {
+            is UserReference.Id -> {
+                query = query.where { TUser.id eq user.id.long }
+            }
+
+            UserReference.Random -> {}
+        }
+
+        query.count() > 0
     }
 
     suspend fun insert(
@@ -122,7 +132,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
      * @return new user; null if invalid user id
      */
     suspend fun update(
-        id: UserId,
+        ref: UserReference,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -132,8 +142,11 @@ class UserRepository internal constructor(private val main: MainRepository) {
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
     ): UpdateUserResult = main.transaction {
+        val id = main.resolve(ref)
+            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
+
         val oldUser = get(id)
-            ?: return@transaction UpdateUserError.UnknownUserId.asError()
+            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
 
         cover.onPresent { cover ->
             cover ?: return@onPresent
@@ -182,7 +195,7 @@ class UserRepository internal constructor(private val main: MainRepository) {
         }
 
         val newUser = get(id)
-            ?: return@transaction UpdateUserError.UnknownUserId.asError()
+            ?: return@transaction UpdateUserError.InvalidUserReference.asError()
 
 //        main.eventsCollector.onEvent(UserUpdated(old = oldUser, new = newUser))
 

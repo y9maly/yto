@@ -17,5 +17,5 @@ dependencies {
     api(project(":presentation:result"))
     api(project(":presentation:integration:context"))
     implementation(libs.kotlinx.rpc.core)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.9.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
 }

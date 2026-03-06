@@ -28,7 +28,6 @@ class Client internal constructor(
     internal val token get() = auth.token
     val auth = AuthClient(this, initialSession, token)
     val user = UserClient(this)
-    val feed = FeedClient(this)
     val post = PostClient(this)
     val file = FileClient(this)
 

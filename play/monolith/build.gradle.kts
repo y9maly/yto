@@ -16,4 +16,6 @@ dependencies {
     implementation(project(":presentation:api:krpc"))
     implementation(project(":presentation:integration:assembler"))
     implementation(project(":presentation:integration:presenter"))
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
 }

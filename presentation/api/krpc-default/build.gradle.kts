@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
 }
 
@@ -18,4 +19,7 @@ dependencies {
     api(project(":presentation:integration:authenticator"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-protobuf:1.10.0")
 }

@@ -1,7 +1,10 @@
 pluginManagement {
+    includeBuild("utils/plugin-endpoint-controller/gradle-plugin")
+
     repositories {
         mavenCentral()
         gradlePluginPortal()
+        mavenLocal()
     }
 }
 
@@ -28,7 +31,15 @@ include("play") {
 }
 
 include("sdk") {
+    "core"()
+    "integration" {
 
+    }
+    "extensions" {
+        "gracefulScope"()
+        "endpoints"()
+        "features"()
+    }
 }
 
 include("containers") {
@@ -43,6 +54,7 @@ include("presentation") {
         "ktor-krpc"()
     }
     "api" {
+        "endpoint"()
         "controller"()
         "controller-default"()
         "krpc"()
@@ -113,4 +125,10 @@ include("libs") {
         "core"()
     }
     "io"()
+}
+
+include("utils") {
+    "plugin-endpoint-controller" {
+        "compiler-plugin"()
+    }
 }

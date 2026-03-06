@@ -12,10 +12,8 @@ open class PostSelector @InterfaceClass constructor(
     private val main: MainSelector,
     private val repo: MainRepository,
 ) {
-    suspend fun select(ref: PostReference): PostId? {
-        if (ref is PostReference.Id)
-            return ref.id
-
-        return repo.post.get(ref)?.id
+    suspend fun select(descriptor: PostDescriptor): PostReference? {
+        check(descriptor is PostReference) { TODO() }
+        return descriptor
     }
 }

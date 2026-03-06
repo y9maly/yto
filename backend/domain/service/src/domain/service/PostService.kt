@@ -1,24 +1,17 @@
 package domain.service
 
-import backend.core.types.InputPostContent
-import backend.core.types.InputPostLocation
-import backend.core.types.Post
-import backend.core.types.PostId
-import backend.core.types.PostLocationPredicate
-import backend.core.types.PostPredicate
-import backend.core.types.PostReference
-import backend.core.types.UserId
-import backend.core.types.UserPredicate
-import backend.core.types.UserReference
-import backend.core.types.acceptOnly
+import backend.core.types.*
 import domain.selector.MainSelector
 import domain.service.result.CreatePostError
 import domain.service.result.CreatePostResult
+import domain.service.result.DeletePostError
 import domain.service.result.map
 import integration.repository.MainRepository
-import y9to.libs.paging.Slice
-import y9to.libs.paging.SliceKey
-import y9to.libs.paging.mapOptions
+import integration.repository.PostRepository
+import kotlinx.serialization.KSerializer
+import kotlinx.serialization.Serializable
+import kotlinx.serialization.modules.SerializersModule
+import y9to.libs.paging.*
 import y9to.libs.stdlib.InterfaceClass
 import y9to.libs.stdlib.asError
 import kotlin.time.Clock
@@ -62,32 +55,48 @@ class PostService @InterfaceClass constructor(
         ).map()
     }
 
+    suspend fun delete(post: PostReference): DeletePostError {
+        TODO()
+    }
+
     suspend fun sliceGlobal(
-        key: SliceKey<Unit>,
+        key: SliceKey<Unit, Cursor>,
         limit: Int,
-    ): Slice<Post> {
+    ): Slice<Cursor?, Post> {
         return repo.post.slice(
-            key = key.mapOptions {
-                acceptOnly(PostPredicate.Location(
-                    location = acceptOnly(PostLocationPredicate.Global)
-                ))
-            },
+            key = key
+                .mapOptions {
+                    PostRepository.SliceOptions(
+                        filter = acceptOnly(PostPredicate.Location(
+                            location = acceptOnly(PostLocationPredicate.Global)
+                        ))
+                    )
+                },
             limit = limit,
         )
     }
 
     suspend fun sliceProfile(
-        key: SliceKey<UserId>,
+        key: SliceKey<UserId, Cursor>,
         limit: Int,
-    ): Slice<Post>? {
+    ): Slice<Cursor?, Post>? {
+        key.onInitialize { userId ->
+            if (!repo.user.exists(userId)) {
+                return null
+            }
+        }
+
         return repo.post.slice(
-            key = key.mapOptions { userId ->
-                acceptOnly(PostPredicate.Location(
-                    location = acceptOnly(PostLocationPredicate.Profile(
-                        user = acceptOnly(UserPredicate.Id(userId))
-                    ))
-                ))
-            },
+            key = key
+                .mapOptions { userId ->
+                    PostRepository.SliceOptions(
+                        filter = acceptOnly(PostPredicate.Location(
+                            location = acceptOnly(PostLocationPredicate.Profile(
+                                user = acceptOnly(UserPredicate.Id(userId))
+                            ))
+                        ))
+                    )
+                },
             limit = limit,
         )
     }
@@ -103,9 +112,9 @@ private suspend fun InputPostContent.map(
         }
 
         is InputPostContent.Repost -> {
-            val original = selector.select(original)
+            val originalRef = selector.select(original)
                 ?: return null
-            integration.repository.input.InputPostContent.Repost(comment, original)
+            integration.repository.input.InputPostContent.Repost(comment, originalRef)
         }
     }
 }
@@ -119,9 +128,9 @@ private suspend fun InputPostLocation.map(
         }
 
         is InputPostLocation.Profile -> {
-            val userId = selector.select(user)
+            val userRef = selector.select(user)
                 ?: return null
-            integration.repository.input.InputPostLocation.Profile(userId)
+            integration.repository.input.InputPostLocation.Profile(userRef)
         }
     }
 }
