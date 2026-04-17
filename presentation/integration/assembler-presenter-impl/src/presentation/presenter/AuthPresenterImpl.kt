@@ -1,6 +1,6 @@
 package presentation.presenter
 
-import domain.service.MainService
+import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.sessionId
 import presentation.mapper.map
@@ -11,7 +11,7 @@ import backend.core.types.AuthState as BackendAuthState
 
 
 class AuthPresenterImpl(
-    private val service: MainService,
+    private val service: ServiceCollection,
 ) : AuthPresenter {
     context(context: Context)
     override suspend fun Session(backendSession: BackendSession): Session {

@@ -11,6 +11,8 @@ repositories {
 
 kotlin {
     sourceSets.commonMain.dependencies {
+        api(project("out-ports"))
+
         api(project(":presentation:types"))
         api(project(":presentation:input"))
         api(project(":presentation:result"))
@@ -21,17 +23,18 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
         api(project(":libs:paging:core"))
         implementation(project(":libs:io"))
+
+        implementation(libs.kotlinx.rpc.krpc.client)
     }
 
     sourceSets.nonWasmWasiMain.dependencies {
         // Implementation
 
-        val ktorVersion = "3.4.0"
+        val ktorVersion = "3.4.2"
         implementation("io.ktor:ktor-client-core:${ktorVersion}")
         implementation("io.ktor:ktor-client-cio:${ktorVersion}")
         implementation("io.ktor:ktor-client-websockets:${ktorVersion}")
         implementation("io.ktor:ktor-serialization-kotlinx-json:${ktorVersion}")
-        implementation(libs.kotlinx.rpc.krpc.client)
         implementation(libs.kotlinx.rpc.krpc.ktor.client)
         implementation(libs.kotlinx.rpc.krpc.serialization.json)
     }

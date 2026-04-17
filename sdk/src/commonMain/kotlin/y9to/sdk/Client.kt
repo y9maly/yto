@@ -6,56 +6,24 @@ import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.launch
 import y9to.api.krpc.MainRpc
+import y9to.api.types.RefreshToken
 import y9to.api.types.Session
 import y9to.api.types.Token
+import y9to.sdk.internals.RequestController
+import y9to.sdk.internals.RpcController
 
-
-internal class ClientNetwork {
-    val connected = MutableStateFlow(false)
-}
 
 class Client internal constructor(
-    token: Token,
-    initialSession: Session,
-    internal val httpClient: Any,
     internal val scope: CoroutineScope,
-    private val rpcFactory: suspend () -> Pair<Job, MainRpc>,
+    internal val kvStorage: KVStorage,
+    internal val httpClient: Any,
+    internal val requestController: RequestController,
+    internal val rpcController: RpcController,
 ) {
-    init {
-        requestRpc()
-    }
-
-    internal val token get() = auth.token
-    val auth = AuthClient(this, initialSession, token)
+    val auth = AuthClient(this)
     val user = UserClient(this)
     val post = PostClient(this)
     val file = FileClient(this)
-
-    private var _rpc: Pair<Job, MainRpc>? = null
-    internal val rpc: MainRpc get() {
-        val value = _rpc
-        if (value == null || !value.first.isActive) {
-            _rpc = null
-            requestRpc()
-            error("No RPC: Network error")
-        }
-        return value.second
-    }
-
-    private var rpcUnderConstruction = false
-    private fun requestRpc() {
-        scope.launch(start = CoroutineStart.UNDISPATCHED) {
-            if (rpcUnderConstruction) {
-                return@launch
-            }
-            rpcUnderConstruction = true
-            try {
-                _rpc = rpcFactory()
-            } finally {
-                rpcUnderConstruction = false
-            }
-        }
-    }
 }
 
 
@@ -63,4 +31,5 @@ expect suspend fun createSdkClient(
     host: String,
     port: Int,
     path: String,
+    kvStorage: KVStorage,
 ): Client

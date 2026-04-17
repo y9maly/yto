@@ -4,14 +4,14 @@ import backend.core.types.User
 import y9to.libs.stdlib.Union
 
 
-typealias UpdateUserResult = Union<UpdateUserOk, UpdateUserError>
+typealias EditUserResult = Union<EditUserOk, EditUserError>
 
 
-data class UpdateUserOk(val new: User)
+data class EditUserOk(val new: User)
 
 
-sealed interface UpdateUserError {
-    data object InvalidUserLink : UpdateUserError
-    data object InvalidCoverFileId : UpdateUserError
-    data object InvalidAvatarFileId : UpdateUserError
+sealed interface EditUserError {
+    data object InvalidUserLink : EditUserError
+    data object InvalidCoverFileId : EditUserError
+    data object InvalidAvatarFileId : EditUserError
 }

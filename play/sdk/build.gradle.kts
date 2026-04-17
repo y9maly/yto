@@ -11,9 +11,10 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 
 dependencies {
     api(project(":sdk"))
+    api(project(":sdk:out-adapters"))
     implementation(project(":libs:io"))
 
-    val ktorVersion = "3.4.0"
+    val ktorVersion = "3.4.2"
     api("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation(libs.kotlinx.rpc.krpc.client)
     implementation(libs.kotlinx.rpc.krpc.ktor.client)

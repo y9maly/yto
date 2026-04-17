@@ -1,14 +1,14 @@
 package y9to.api.controller
 
 import backend.core.types.FileOwner
-import domain.service.MainService
+import domain.service.ServiceCollection
 import domain.service.result.UploadFilePartsResult
-import presentation.assembler.MainAssembler
+import presentation.assembler.AssemblerCollection
 import presentation.assembler.map
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
-import presentation.presenter.MainPresenter
+import presentation.presenter.PresenterCollection
 import presentation.presenter.map
 import y9to.api.types.File
 import y9to.api.types.FileId
@@ -22,9 +22,9 @@ import y9to.libs.stdlib.asOk
 
 
 class FileControllerDefault(
-    private val service: MainService,
-    override val assembler: MainAssembler,
-    override val presenter: MainPresenter,
+    private val service: ServiceCollection,
+    override val assembler: AssemblerCollection,
+    override val presenter: PresenterCollection,
     private val fileSink: (uri: String) -> FileSink,
     private val fileSource: (uri: String) -> FileSource,
 ) : FileController, ControllerDefault {

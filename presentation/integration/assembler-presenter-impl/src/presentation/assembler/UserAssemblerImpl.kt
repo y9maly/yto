@@ -1,21 +1,20 @@
 package presentation.assembler
 
-import backend.core.types.UserLink
 import backend.core.types.UserId
-import domain.service.MainService
+import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.mapper.map
 import y9to.api.types.InputUser
 
 
 class UserAssemblerImpl(
-    private val service: MainService,
+    private val service: ServiceCollection,
 ) : UserAssembler {
     context(context: Context)
-    override suspend fun resolve(input: InputUser): UserLink? {
+    override suspend fun resolve(input: InputUser): UserId? {
         when (input) {
             is InputUser.Id -> {
-                return UserLink.Id(input.id.map())
+                return input.id.map()
             }
         }
     }

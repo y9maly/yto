@@ -1,5 +1,6 @@
 package y9to.api.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
@@ -15,10 +16,12 @@ import kotlin.time.Instant
 )
 
 @S sealed interface FileSink {
+    @SerialName("HttpOctetStream")
     @S data class HttpOctetStream(val url: String) : FileSink
 }
 
 @S sealed interface FileSource {
+    @SerialName("HttpOctetStream")
     @S data class HttpOctetStream(val url: String) : FileSource
 }
 
@@ -39,6 +42,7 @@ import kotlin.time.Instant
 }
 
 
+@SerialName("ImageFile")
 @S data class ImageFile(
     val file: FileId,
     val format: ImageFileFormat,

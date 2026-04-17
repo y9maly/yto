@@ -1,5 +1,6 @@
 package backend.core.types
 
+import kotlinx.serialization.SerialName
 import kotlin.time.Instant
 import kotlinx.serialization.Serializable as S
 
@@ -10,7 +11,10 @@ import kotlinx.serialization.Serializable as S
 @S sealed interface ClientId
 
 @S sealed interface AuthState {
+    @SerialName("Unauthorized")
     @S data object Unauthorized : AuthState
+
+    @SerialName("Authorized")
     @S data class Authorized(val id: ClientId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id
@@ -18,8 +22,7 @@ import kotlinx.serialization.Serializable as S
 }
 
 
-@JvmInline
-@S value class SessionId(val long: Long)
+@S data class SessionId(val long: Long)
 
 @S data class Session(
     val id: SessionId,

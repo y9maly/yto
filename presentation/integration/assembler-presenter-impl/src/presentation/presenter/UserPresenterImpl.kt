@@ -1,6 +1,6 @@
 package presentation.presenter
 
-import domain.service.MainService
+import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
@@ -10,8 +10,8 @@ import y9to.api.types.User
 
 
 class UserPresenterImpl(
-    main: Lazy<MainPresenter>,
-    private val service: MainService,
+    main: Lazy<PresenterCollection>,
+    private val service: ServiceCollection,
 ) : UserPresenter {
     private val main by main
 

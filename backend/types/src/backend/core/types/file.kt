@@ -1,5 +1,6 @@
 package backend.core.types
 
+import kotlinx.serialization.SerialName
 import kotlin.time.Instant
 import kotlinx.serialization.Serializable as S
 
@@ -18,7 +19,10 @@ import kotlinx.serialization.Serializable as S
 )
 
 @S sealed interface FileOwner {
+    @SerialName("Unknown")
     @S data object Unknown : FileOwner
+
+    @SerialName("User")
     @S data class User(val user: UserId, val session: SessionId?) : FileOwner
 }
 
@@ -41,6 +45,7 @@ import kotlinx.serialization.Serializable as S
 }
 
 
+@SerialName("ImageFile")
 @S data class ImageFile(
     val file: FileId,
     val format: ImageFileFormat,

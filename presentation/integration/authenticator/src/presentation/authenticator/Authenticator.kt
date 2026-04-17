@@ -1,12 +1,17 @@
 package presentation.authenticator
 
-import backend.core.types.SessionId
 import y9to.api.types.Token
 
 
 interface Authenticator {
-    suspend fun authenticate(token: Token) = authenticateOrNull(token)
-        ?: error("Invalid token")
+    suspend fun authenticate(token: Token): AuthenticateResult
+}
 
-    suspend fun authenticateOrNull(token: Token): SessionId?
+suspend fun Authenticator.authenticateOrThrow(token: Token): AuthenticateResult.Ok = when (
+    val result = authenticate(token)
+) {
+    is AuthenticateResult.Ok -> result
+    is AuthenticateResult.InvalidToken -> error("Invalid token")
+    is AuthenticateResult.RevokedToken -> error("Revoked token")
+    is AuthenticateResult.ExpiredToken -> error("Expired token")
 }

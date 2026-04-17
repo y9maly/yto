@@ -15,16 +15,25 @@ dependencies {
     implementation(project(":presentation:api:krpc-default"))
     implementation(project(":presentation:gateway:ktor-krpc"))
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
-    implementation(project(":presentation:integration:authenticator-silly"))
+    implementation(project(":presentation:integration:tokenProvider"))
+    implementation(project(":presentation:integration:tokenProvider-jwtManager"))
+    implementation(project(":presentation:integration:authenticator"))
+    implementation(project(":presentation:integration:authenticator-jwtManager"))
     implementation(project(":presentation:integration:assembler-presenter-impl"))
+    implementation(project(":presentation:infrastructure:jwtManager"))
+    implementation(project(":presentation:infrastructure:jwtManager-impl"))
     implementation(project(":backend:domain:service-impl"))
+    implementation(project(":backend:integration:eventCollector"))
+    implementation(project(":backend:integration:eventCollector-kafka"))
     implementation(project(":backend:integration:selector-impl"))
     implementation(project(":backend:integration:data:repository-postgres"))
     implementation(project(":backend:integration:data:fileStorage-local"))
 
     implementation("ch.qos.logback:logback-classic:1.5.27")
+    implementation("org.apache.kafka:kafka-clients:4.2.0")
+    implementation("io.github.crackthecodeabhi:kreds:0.9.1")
 
-    val ktorVersion = "3.4.0"
+    val ktorVersion = "3.4.2"
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
     implementation("io.ktor:ktor-network-tls-jvm:$ktorVersion")
@@ -35,7 +44,7 @@ dependencies {
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
 
-    val exposedVersion = "1.0.0-rc-4"
+    val exposedVersion = "1.2.0"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
     implementation("org.jetbrains.exposed:exposed-r2dbc:$exposedVersion")
     implementation("com.h2database:h2:2.4.240")

@@ -1,5 +1,6 @@
 package y9to.api.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import y9to.libs.stdlib.optional.Optional
 import y9to.libs.stdlib.optional.none
@@ -7,8 +8,10 @@ import y9to.libs.stdlib.optional.present
 
 
 @S sealed interface Secure<out T> {
+    @SerialName("Available")
     @S data class Available<out T>(val value: T) : Secure<T>
 
+    @SerialName("Unavailable")
     @S data object Unavailable : Secure<Nothing>
 
     fun orNull(): T? = (this as? Available)?.value

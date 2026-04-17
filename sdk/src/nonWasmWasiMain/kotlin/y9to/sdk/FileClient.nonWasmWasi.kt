@@ -13,12 +13,7 @@ import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.json.long
-import y9to.api.types.File
-import y9to.api.types.FileId
-import y9to.api.types.FileSink
-import y9to.api.types.FileSource
-import y9to.api.types.FileTypes
-import y9to.api.types.UploadFileError
+import y9to.api.types.*
 import y9to.libs.io.internals.DelicateIoApi
 import y9to.libs.io.segment.ImmutableSegment
 import y9to.libs.io.segment.Segment
@@ -27,20 +22,22 @@ import y9to.libs.stdlib.Union
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
 import y9to.libs.stdlib.successOrElse
+import y9to.sdk.internals.ClientOwner
+import y9to.sdk.internals.request
 import y9to.sdk.types.ReadSegmentScope
 import y9to.sdk.types.WriteSegmentScope
 import kotlinx.io.UnsafeIoApi as UnsafeKotlinxIoApi
 
 
 actual class FileClient internal actual constructor(
-    private val client: Client,
-) {
+    override val client: Client,
+) : ClientOwner {
     actual suspend fun get(id: FileId): File? {
-        return client.rpc.file.get(client.token, id)
+        return this.request { rpc.file.get(token, id) }
     }
 
     actual suspend fun download(id: FileId, read: suspend ReadSegmentScope.() -> Unit): Boolean {
-        val source = client.rpc.file.download(client.token, id)
+        val source = request { rpc.file.download(token, id) }
             ?: return false
 
         when (source) {
@@ -56,12 +53,14 @@ actual class FileClient internal actual constructor(
         expectedSize: Long?,
         write: suspend WriteSegmentScope.() -> Unit,
     ): Union<File, UploadFileError> {
-        val sink = client.rpc.file.upload(
-            token = client.token,
-            name = name,
-            types = types,
-            expectedSize = expectedSize,
-        ).successOrElse { error ->
+        val sink = request {
+            rpc.file.upload(
+                token = token,
+                name = name,
+                types = types,
+                expectedSize = expectedSize,
+            )
+        }.successOrElse { error ->
             return error.asError()
         }
 
@@ -125,7 +124,7 @@ actual class FileClient internal actual constructor(
             .jsonPrimitive
             .long
 
-        val file = client.rpc.file.get(client.token, FileId(fileId))
+        val file = request { rpc.file.get(token, FileId(fileId)) }
             ?: error("Failed to upload file")
 
         return file.asOk()

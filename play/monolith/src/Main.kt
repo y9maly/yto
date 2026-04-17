@@ -1,9 +1,11 @@
-import container.monolith.Token
+import backend.core.types.SessionId
 import container.monolith.instantiate
+import presentation.infra.jwtManager.asOk
 import y9to.api.types.InputFeed
 import y9to.api.types.InputPostContent
 import y9to.api.types.InputPostLocation
 import y9to.api.types.InputUser
+import y9to.api.types.Token
 import y9to.api.types.UserId
 import y9to.libs.paging.SliceKey
 import java.util.logging.Level
@@ -13,7 +15,7 @@ import kotlin.io.encoding.Base64
 
 suspend fun main() {
     val monolith = instantiate()
-    val token = Token(2)
+    val token = Token(monolith.jwtManager.issueTokens(SessionId(2)).asOk().accessToken)
 
     println(monolith)
 

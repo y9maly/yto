@@ -1,47 +1,19 @@
 package domain.service
 
-import backend.core.types.UserLink
-import backend.core.types.FileId
-import backend.core.types.SessionId
-import backend.core.types.User
-import backend.core.types.UserRef
-import backend.core.types.UserId
-import domain.selector.MainSelector
-import domain.service.result.*
-import integration.repository.MainRepository
+import backend.core.types.*
+import domain.service.result.EditUserResult
 import y9to.common.types.Birthday
-import y9to.libs.stdlib.InterfaceClass
-import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.optional.Optional
-import y9to.libs.stdlib.optional.map
 import y9to.libs.stdlib.optional.none
-import kotlin.time.Clock
 
 
-class UserService @InterfaceClass constructor(
-    private val repo: MainRepository,
-    private val selector: MainSelector,
-    private val clock: Clock,
-) {
-    suspend fun get(id: UserId) = get(UserLink.Id(id))
-    suspend fun get(link: UserLink): User? {
-        val id = selector.select(link) ?: return null
-        return repo.user.get(id)
-    }
+interface UserService {
+    suspend fun resolve(ref: UserRef): UserId?
+    suspend fun get(id: UserId): User?
+    suspend fun exists(id: UserId): Boolean
 
-    suspend fun exists(id: UserId) = exists(UserLink.Id(id))
-    suspend fun exists(link: UserLink): Boolean {
-        val id = selector.select(link) ?: return false
-        return repo.user.exists(id)
-    }
-
-    suspend fun findByPhoneNumber(phoneNumber: String): User? {
-        return repo.user.selectByPhoneNumber(phoneNumber)
-    }
-
-    suspend fun findByEmail(email: String): User? {
-        return repo.user.selectByEmail(email)
-    }
+    suspend fun findByPhoneNumber(phoneNumber: String): User?
+    suspend fun findByEmail(email: String): User?
 
     suspend fun register(
         session: SessionId,
@@ -53,22 +25,10 @@ class UserService @InterfaceClass constructor(
         birthday: Optional<Birthday>,
         cover: Optional<FileId?>,
         avatar: Optional<FileId?>,
-    ): User {
-        return repo.user.insert(
-            registrationDate = clock.now(),
-            phoneNumber = phoneNumber,
-            email = email,
-            firstName = firstName,
-            lastName = lastName,
-            bio = bio,
-            birthday = birthday,
-            cover = cover,
-            avatar = avatar,
-        )
-    }
+    ): User
 
     suspend fun edit(
-        xxxxxx: UserRef,
+        id: UserId,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -77,56 +37,5 @@ class UserService @InterfaceClass constructor(
         birthday: Optional<Birthday?> = none(),
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
-    ): EditUserResult {
-        val link = selector.select(xxxxxx)
-            ?: return EditUserError.InvalidUserRef.asError()
-
-        val firstNameError = firstName.map { firstName ->
-            if (firstName.isBlank())
-                return@map EditUserNameError.CannotBeBlank
-            if (firstName.length !in repo.user.firstNameLength)
-                return@map EditUserNameError.ExceededLengthRange
-            null
-        }.getOrNull()
-
-        val lastNameError = lastName.map { lastName ->
-            lastName ?: return@map null
-            if (lastName.isBlank())
-                return@map EditUserNameError.CannotBeBlank
-            if (lastName.length !in repo.user.lastNameLength)
-                return@map EditUserNameError.ExceededLengthRange
-            null
-        }.getOrNull()
-
-        val bioError = bio.map { bio ->
-            bio ?: return@map null
-            if (bio.length !in repo.user.bioLength)
-                return@map EditUserBioError.ExceededLengthRange
-            null
-        }.getOrNull()
-
-        if (arrayOf(
-            firstNameError,
-            lastNameError,
-            bioError,
-        ).any { it != null }) {
-            return EditUserError.FieldErrors(
-                firstNameError = firstNameError,
-                lastNameError = lastNameError,
-                bioError = bioError,
-            ).asError()
-        }
-
-        return repo.user.update(
-            link = link,
-            phoneNumber = phoneNumber,
-            email = email,
-            firstName = firstName,
-            lastName = lastName,
-            bio = bio,
-            birthday = birthday,
-            cover = cover,
-            avatar = avatar,
-        ).map()
-    }
+    ): EditUserResult
 }

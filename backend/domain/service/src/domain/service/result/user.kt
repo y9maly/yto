@@ -1,10 +1,6 @@
 package domain.service.result
 
 import backend.core.types.User
-import domain.service.result.internals.mapBoth
-import integration.repository.result.UpdateUserError
-import integration.repository.result.UpdateUserOk
-import integration.repository.result.UpdateUserResult
 import y9to.libs.stdlib.Union
 
 
@@ -15,7 +11,7 @@ data class EditUserOk(val new: User)
 
 
 sealed interface EditUserError {
-    data object InvalidUserRef : EditUserError
+    data object InvalidUserId : EditUserError
 
     data class FieldErrors(
         val firstNameError: EditUserNameError? = null,
@@ -46,13 +42,4 @@ sealed interface EditUserCoverError {
 
 sealed interface EditUserAvatarError {
     data object InvalidFile : EditUserAvatarError
-}
-
-
-fun UpdateUserResult.map() = mapBoth({ map() }, { map() })
-fun UpdateUserOk.map() = EditUserOk(new)
-fun UpdateUserError.map() = when (this) {
-    UpdateUserError.InvalidUserLink -> EditUserError.InvalidUserRef
-    UpdateUserError.InvalidCoverFileId -> EditUserError.FieldErrors(coverError = EditUserCoverError.InvalidFile)
-    UpdateUserError.InvalidAvatarFileId -> EditUserError.FieldErrors(avatarError = EditUserAvatarError.InvalidFile)
 }

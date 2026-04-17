@@ -1,9 +1,9 @@
 package presentation.assembler
 
 import backend.core.types.InputPostContent
-import backend.core.types.PostLink
-import backend.core.types.UserLink
-import domain.service.MainService
+import backend.core.types.PostId
+import backend.core.types.PostRef
+import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
@@ -12,12 +12,12 @@ import y9to.api.types.InputPost
 
 
 class PostAssemblerImpl(
-    private val service: MainService,
+    private val service: ServiceCollection,
 ) : PostAssembler {
     context(context: Context)
-    override suspend fun resolve(input: InputPost): PostLink? {
+    override suspend fun resolve(input: InputPost): PostId? {
         if (input is InputPost.Id)
-            return PostLink.Id(input.id.map())
+            return input.id.map()
 
         val authState = authStateOrPut {
             service.auth.getAuthState(sessionId)
@@ -25,13 +25,14 @@ class PostAssemblerImpl(
         }
         val selfId = authState.userIdOrNull()
             ?: error("Unauthenticated")
-        val selfLink = UserLink.Id(selfId)
 
-        return when (input) {
-            is InputPost.MyFirstPost -> PostLink.FirstOfAuthor(selfLink)
-            is InputPost.MyRandomPost -> PostLink.RandomOfAuthor(selfLink)
-            is InputPost.MyLastPost -> PostLink.LastOfAuthor(selfLink)
+        val ref = when (input) {
+            is InputPost.MyFirstPost -> PostRef.FirstOfAuthor(selfId)
+            is InputPost.MyRandomPost -> PostRef.RandomOfAuthor(selfId)
+            is InputPost.MyLastPost -> PostRef.LastOfAuthor(selfId)
         }
+
+        return service.post.resolve(ref)
     }
 
     context(context: Context)

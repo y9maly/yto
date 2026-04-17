@@ -5,9 +5,6 @@ import y9to.common.types.Birthday
 import kotlin.time.Instant
 
 
-@JvmInline
-@S value class UserId(val long: Long) : ClientId
-
 @S data class User(
     val id: UserId,
     val revision: Revision,

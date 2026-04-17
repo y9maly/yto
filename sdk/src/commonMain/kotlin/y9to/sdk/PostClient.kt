@@ -13,9 +13,11 @@ import y9to.api.types.Post
 import y9to.libs.paging.Cursor
 import y9to.libs.paging.Slice
 import y9to.libs.paging.SliceKey
+import y9to.sdk.internals.ClientOwner
+import y9to.sdk.internals.request
 
 
-class PostClient internal constructor(private val client: Client) {
+class PostClient internal constructor(override val client: Client) : ClientOwner {
     fun getFlow(input: InputPost): Flow<Post?> = flow {
         while (true) {
             try {
@@ -30,7 +32,9 @@ class PostClient internal constructor(private val client: Client) {
     }
 
     suspend fun get(input: InputPost): Post? {
-        return client.rpc.post.get(client.token, input)
+        return request {
+            rpc.post.get(token, input)
+        }
     }
 
     suspend fun create(
@@ -38,22 +42,26 @@ class PostClient internal constructor(private val client: Client) {
         replyTo: InputPost? = null,
         content: InputPostContent,
     ): CreatePostResult {
-        return client.rpc.post.create(
-            token = client.token,
-            location = location,
-            replyTo = replyTo,
-            content = content,
-        )
+        return request {
+            rpc.post.create(
+                token = token,
+                location = location,
+                replyTo = replyTo,
+                content = content,
+            )
+        }
     }
 
     suspend fun sliceFeed(
         key: SliceKey<InputFeed, Cursor>,
         limit: Int,
     ): Slice<Cursor?, Post> {
-        return client.rpc.post.sliceFeed(
-            token = client.token,
-            key = key,
-            limit = limit,
-        )
+        return request {
+            rpc.post.sliceFeed(
+                token = token,
+                key = key,
+                limit = limit,
+            )
+        }
     }
 }

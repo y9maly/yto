@@ -1,5 +1,6 @@
 package y9to.api.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 
 
@@ -16,6 +17,7 @@ sealed class ApiException(
     val description: String? get() = null
 }
 
+@SerialName("InvalidTokenError")
 @S data class InvalidTokenError(val token: Token) : ApiError {
     override val description get() = "Provided token is invalid"
 }

@@ -1,4 +1,4 @@
 package domain.event
 
 
-sealed interface Event
+interface Event

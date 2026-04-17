@@ -31,6 +31,8 @@ include("play") {
 }
 
 include("sdk") {
+    "out-ports"()
+    "out-adapters"()
     "core"()
     "integration" {
 
@@ -60,13 +62,20 @@ include("presentation") {
         "krpc"()
         "krpc-default"()
     }
+    "workers"()
     "integration" {
         "context"()
         "authenticator"()
-        "authenticator-silly"()
+        "authenticator-jwtManager"()
+        "tokenProvider"()
+        "tokenProvider-jwtManager"()
         "assembler"()
         "presenter"()
         "assembler-presenter-impl"()
+    }
+    "infrastructure" {
+        "jwtManager"()
+        "jwtManager-impl"()
     }
 }
 
@@ -82,10 +91,9 @@ include("backend") {
     "domain" {
         "service"()
         "service-impl"()
+        "workers"()
         "updatesCenter"()
     }
-
-    // Integration   (maybe Data idk, its not data only, its like domain-spi more)
 
     "integration" {
         "data" {
@@ -97,6 +105,7 @@ include("backend") {
             "keyValueCache-redis"()
         }
         "eventCollector"()
+        "eventCollector-kafka"()
         "thirdpartyOnlineStatus"()
         "notificationService"()
         "notificationService-firebase"()

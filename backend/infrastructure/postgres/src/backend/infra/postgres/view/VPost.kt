@@ -14,6 +14,10 @@ object VPost : LongIdTable("view_post") {
     val last_edit_date = timestamp("last_edit_date").nullable()
     val content_type = postContentType("content_type")
 
+    // location profile
+    val location_profile_first_name = text("location_profile_first_name").nullable()
+    val location_profile_last_name = text("location_profile_last_name").nullable()
+
     // author
     val author_id = long("author_id")
     val author_first_name = text("author_first_name")

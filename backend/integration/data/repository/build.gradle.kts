@@ -12,9 +12,5 @@ kotlin.sourceSets.main.get().kotlin.srcDir("src")
 dependencies {
     api(project(":backend:types"))
     api(project(":libs:paging:core"))
-
-    // Implementation
-
-    implementation(project(":backend:infrastructure:postgres"))
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
 }

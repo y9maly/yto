@@ -2,28 +2,14 @@
 
 package y9to.api.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import y9to.common.types.Birthday
 import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-/**
- * Почему это data class?
- *
- * ```Kotlin
- * @Serializable
- * sealed interface A
- *
- * @Serializable
- * @JvmInline
- * value class B(val int: Int) : A
- *
- * Json.encodeToString(serializer<A>(), B(123)) // "123" instead of `{"type": "B", int: 123}`
- * ```
- *
- * Коклен сериализует это как "123", и очевидно оно падает при десериализации.
- */
+@SerialName("UserId")
 @S data class UserId(val long: Long) : ClientId
 
 @S data class User(

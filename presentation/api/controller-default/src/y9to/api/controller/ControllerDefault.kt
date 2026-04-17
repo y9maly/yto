@@ -1,14 +1,14 @@
 package y9to.api.controller
 
-import presentation.assembler.MainAssembler
-import presentation.presenter.MainPresenter
+import presentation.assembler.AssemblerCollection
+import presentation.presenter.PresenterCollection
 
 
 internal interface ControllerDefault {
-    val assembler: MainAssembler
-    val presenter: MainPresenter
+    val assembler: AssemblerCollection
+    val presenter: PresenterCollection
 }
 
 internal inline fun <R> ControllerDefault.context(
-    block: context(MainAssembler, MainPresenter) () -> R
+    block: context(AssemblerCollection, PresenterCollection) () -> R
 ): R = block(assembler, presenter)

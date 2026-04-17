@@ -1,15 +1,14 @@
 package y9to.api.controller
 
-import backend.core.types.UserLink
-import domain.service.MainService
+import domain.service.ServiceCollection
 import domain.service.result.*
-import presentation.assembler.MainAssembler
+import presentation.assembler.AssemblerCollection
 import presentation.assembler.map
 import presentation.assembler.resolve
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
-import presentation.presenter.MainPresenter
+import presentation.presenter.PresenterCollection
 import presentation.presenter.mapAsMyProfile
 import presentation.presenter.mapAsUser
 import y9to.api.types.*
@@ -21,9 +20,9 @@ import y9to.libs.stdlib.optional.map
 
 
 class UserControllerDefault(
-    private val service: MainService,
-    override val assembler: MainAssembler,
-    override val presenter: MainPresenter,
+    private val service: ServiceCollection,
+    override val assembler: AssemblerCollection,
+    override val presenter: PresenterCollection,
 ) : UserController, ControllerDefault {
     context(_: Context)
     override suspend fun getMyProfile(): MyProfile? = context {
@@ -71,7 +70,7 @@ class UserControllerDefault(
         val avatar = avatar.map { it?.map() }
 
         service.user.edit(
-            xxxxxx = UserLink.Id(userId),
+            id = userId,
             firstName = firstName,
             lastName = lastName,
             bio = bio,
@@ -80,7 +79,7 @@ class UserControllerDefault(
             avatar = avatar,
         ).onError { error ->
             return when (error) {
-                is EditUserError.InvalidUserRef -> error("Unreachable")
+                is EditUserError.InvalidUserId -> error("Unreachable")
                 is EditUserError.FieldErrors -> error.map().asError()
             }
         }

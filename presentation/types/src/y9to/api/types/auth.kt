@@ -2,20 +2,18 @@
 
 package y9to.api.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmInline
 import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-@S data class Token(
-    val unsafe: Unsafe
-) {
-    @S data class Unsafe(
-        val session: SessionId,
-        val apiVersion: String,
-    )
-}
+// Refresh token
+@S data class RefreshToken(val string: String)
+
+// Access token
+@S data class Token(val string: String)
 
 
 /**
@@ -24,7 +22,10 @@ import kotlin.time.Instant
 @S sealed interface ClientId
 
 @S sealed interface AuthState {
+    @SerialName("Unauthorized")
     @S data object Unauthorized : AuthState
+
+    @SerialName("Authorized")
     @S data class Authorized(val id: ClientId) : AuthState
 
     fun idOrNull() = (this as? Authorized)?.id

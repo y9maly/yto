@@ -1,19 +1,18 @@
 package y9to.api.controller
 
-import backend.core.types.link
-import domain.service.MainService
+import domain.service.ServiceCollection
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
-import presentation.assembler.MainAssembler
+import presentation.assembler.AssemblerCollection
 import presentation.assembler.map
 import presentation.assembler.resolve
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
-import presentation.presenter.MainPresenter
+import presentation.presenter.PresenterCollection
 import presentation.presenter.map
 import y9to.api.types.*
 import y9to.libs.paging.*
@@ -24,9 +23,9 @@ import domain.service.result.CreatePostError as DomainCreatePostError
 
 
 class PostControllerDefault(
-    private val service: MainService,
-    override val assembler: MainAssembler,
-    override val presenter: MainPresenter,
+    private val service: ServiceCollection,
+    override val assembler: AssemblerCollection,
+    override val presenter: PresenterCollection,
 ) : PostController, ControllerDefault {
     @Serializable
     private data class CursorPayload(
@@ -52,7 +51,7 @@ class PostControllerDefault(
                 ?: return CreatePostError.Unauthorized.asError()
         }
 
-        val userLink = authState.userIdOrNull()?.link()
+        val userId = authState.userIdOrNull()
             ?: return CreatePostError.Unauthorized.asError()
 
         val replyToPost = replyTo?.resolve()
@@ -69,15 +68,15 @@ class PostControllerDefault(
                     backend.core.types.InputPostLocation.Profile(user)
                 }
             },
-            userLink,
-            replyToPost,
+            author = userId,
+            replyTo = replyToPost,
             content
         )
             .successOrElse { error ->
                 return when (error) {
                     DomainCreatePostError.InvalidInputContent -> CreatePostError.InvalidInputContent
-                    DomainCreatePostError.InvalidReplyRef -> CreatePostError.InvalidInputReply
-                    DomainCreatePostError.InvalidAuthorRef -> CreatePostError.Unauthorized
+                    DomainCreatePostError.InvalidReplyId -> CreatePostError.InvalidInputReply
+                    DomainCreatePostError.InvalidAuthorId -> CreatePostError.Unauthorized
                     DomainCreatePostError.InvalidInputLocation -> error("Unreachable")
                 }.asError()
             }

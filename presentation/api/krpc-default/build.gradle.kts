@@ -17,6 +17,7 @@ dependencies {
     api(project(":presentation:integration:assembler"))
     api(project(":presentation:integration:presenter"))
     api(project(":presentation:integration:authenticator"))
+    api(project(":presentation:integration:tokenProvider"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")

@@ -1,6 +1,6 @@
 package presentation.presenter
 
-import domain.service.MainService
+import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
@@ -9,7 +9,7 @@ import y9to.api.types.Post
 
 
 class PostPresenterImpl(
-    private val service: MainService,
+    private val service: ServiceCollection,
 ) : PostPresenter {
     context(context: Context)
     override suspend fun Post(backendPost: backend.core.types.Post): Post {

@@ -1,5 +1,6 @@
 package play.sdk
 
+import KVStorageInMemory
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.io.Buffer
@@ -22,7 +23,7 @@ import kotlin.io.path.readBytes
 
 
 suspend fun main(): Unit = coroutineScope {
-    val sdk = createSdkClient("localhost", 8103, "/")
+    val sdk = createSdkClient("localhost", 8103, "/api", KVStorageInMemory())
 
     testUploadDownload(sdk, Path("/Users/mali/IdeaProjects/yto/.testFiles/50m.jpg"))
 }

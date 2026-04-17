@@ -1,94 +1,29 @@
 package integration.repository
 
-import backend.core.types.UserLink
 import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
-import backend.infra.postgres.table.TUser
-import integration.repository.internalResolve.resolve
-import integration.repository.internals.FirstRevision
-import integration.repository.internals.RandomFunction
-import integration.repository.result.UpdateUserError
-import integration.repository.result.UpdateUserOk
-import integration.repository.result.UpdateUserResult
-import kotlinx.coroutines.flow.firstOrNull
-import org.jetbrains.exposed.v1.core.*
-import org.jetbrains.exposed.v1.r2dbc.insertAndGetId
-import org.jetbrains.exposed.v1.r2dbc.select
-import org.jetbrains.exposed.v1.r2dbc.selectAll
-import org.jetbrains.exposed.v1.r2dbc.update
+import backend.core.types.UserRef
+import integration.repository.result.EditUserResult
 import y9to.common.types.Birthday
-import y9to.libs.stdlib.asError
-import y9to.libs.stdlib.asOk
 import y9to.libs.stdlib.optional.Optional
 import y9to.libs.stdlib.optional.none
-import y9to.libs.stdlib.optional.onPresent
 import kotlin.time.Instant
 
 
-class UserRepository internal constructor(private val main: MainRepository) {
-    val firstNameLength = 1..64
-    val lastNameLength = 1..64
-    val bioLength = 1..1024
+interface UserRepository {
+    val firstNameLength: IntRange
+    val lastNameLength: IntRange
+    val bioLength: IntRange
 
-    suspend fun get(id: UserId): User? {
-        return selectByPredicate { TUser.id eq id.long }
-    }
+    suspend fun resolve(ref: UserRef): UserId?
+    suspend fun get(id: UserId): User?
+    suspend fun exists(id: UserId): Boolean
 
-    suspend fun get(link: UserLink): User? {
-        return when (link) {
-            is UserLink.Id -> selectByPredicate { TUser.id eq link.id.long }
-            is UserLink.Random -> getRandom()
-        }
-    }
+    suspend fun getByPhoneNumber(phoneNumber: String): User?
+    suspend fun getByEmail(email: String): User?
 
-    private suspend fun getRandom(): User? = main.transaction(ReadOnly) {
-        val row = TUser.selectAll()
-            .orderBy(RandomFunction() to SortOrder.ASC)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction null
-        fromRow(row)
-    }
-
-    // todo
-    suspend fun selectByPhoneNumber(phoneNumber: String): User? {
-        return selectByPredicate { TUser.phone_number eq phoneNumber }
-    }
-
-    suspend fun selectByEmail(email: String): User? {
-        return selectByPredicate { TUser.email eq email }
-    }
-
-    private suspend inline fun selectByPredicate(noinline predicate: () -> Op<Boolean>): User? = main.transaction(
-        ReadOnly
-    ) {
-        val row = TUser.selectAll()
-            .where(predicate)
-            .limit(1)
-            .firstOrNull()
-            ?: return@transaction null
-        fromRow(row)
-    }
-
-    suspend fun exists(user: UserId) = exists(UserLink.Id(user))
-    suspend fun exists(user: UserLink): Boolean = main.transaction(ReadOnly) {
-        var query = TUser
-            .select(intLiteral(1))
-            .limit(1)
-
-        when (user) {
-            is UserLink.Id -> {
-                query = query.where { TUser.id eq user.id.long }
-            }
-
-            UserLink.Random -> {}
-        }
-
-        query.count() > 0
-    }
-
-    suspend fun insert(
+    suspend fun create(
         registrationDate: Instant,
         phoneNumber: Optional<String?>,
         email: Optional<String?>,
@@ -98,41 +33,13 @@ class UserRepository internal constructor(private val main: MainRepository) {
         birthday: Optional<Birthday?>,
         cover: Optional<FileId?>,
         avatar: Optional<FileId?>,
-    ): User = main.transaction {
-        val userId = TUser.insertAndGetId { row ->
-            row[this.registration_date] = registrationDate
-            row[this.phone_number] = phoneNumber.getOrNull()
-            row[this.email] = email.getOrNull()
-            row[this.first_name] = firstName
-            row[this.last_name] = lastName.getOrNull()
-            row[this.bio] = bio.getOrNull()
-            row[this.birthday] = birthday.getOrNull()
-            row[this.cover] = cover.getOrNull()?.long
-            row[this.avatar] = avatar.getOrNull()?.long
-        }.value
-
-        User(
-            id = UserId(userId),
-            revision = FirstRevision,
-            registrationDate = registrationDate,
-            phoneNumber = phoneNumber.getOrNull(),
-            email = email.getOrNull(),
-            firstName = firstName,
-            lastName = lastName.getOrNull(),
-            bio = bio.getOrNull(),
-            birthday = birthday.getOrNull(),
-            cover = cover.getOrNull(),
-            avatar = avatar.getOrNull(),
-        ).also {
-//            main.eventsCollector.onEvent(UserInserted(it))
-        }
-    }
+    ): User
 
     /**
      * @return new user; null if invalid user id
      */
-    suspend fun update(
-        link: UserLink,
+    suspend fun edit(
+        id: UserId,
         phoneNumber: Optional<String?> = none(),
         email: Optional<String?> = none(),
         firstName: Optional<String> = none(),
@@ -141,80 +48,5 @@ class UserRepository internal constructor(private val main: MainRepository) {
         birthday: Optional<Birthday?> = none(),
         cover: Optional<FileId?> = none(),
         avatar: Optional<FileId?> = none(),
-    ): UpdateUserResult = main.transaction {
-        val id = main.resolve(link)
-            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
-
-        val oldUser = get(id)
-            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
-
-        cover.onPresent { cover ->
-            cover ?: return@onPresent
-            if (!main.file.exists(cover))
-                return@transaction UpdateUserError.InvalidCoverFileId.asError()
-        }
-
-        avatar.onPresent { avatar ->
-            avatar ?: return@onPresent
-            if (!main.file.exists(avatar))
-                return@transaction UpdateUserError.InvalidAvatarFileId.asError()
-        }
-
-        TUser.update(where = { TUser.id eq id.long }) { row ->
-            phoneNumber.onPresent {
-                row[TUser.phone_number] = it
-            }
-
-            email.onPresent {
-                row[TUser.email] = it
-            }
-
-            firstName.onPresent {
-                row[TUser.first_name] = it
-            }
-
-            lastName.onPresent {
-                row[TUser.last_name] = it
-            }
-
-            bio.onPresent {
-                row[TUser.bio] = it
-            }
-
-            birthday.onPresent {
-                row[TUser.birthday] = it
-            }
-
-            cover.onPresent {
-                row[TUser.cover] = it?.long
-            }
-
-            avatar.onPresent {
-                row[TUser.avatar] = it?.long
-            }
-        }
-
-        val newUser = get(id)
-            ?: return@transaction UpdateUserError.InvalidUserLink.asError()
-
-//        main.eventsCollector.onEvent(UserUpdated(old = oldUser, new = newUser))
-
-        UpdateUserOk(
-            new = newUser,
-        ).asOk()
-    }
+    ): EditUserResult
 }
-
-private fun fromRow(row: ResultRow) = User(
-    id = UserId(row[TUser.id].value),
-    revision = row[TUser.revision],
-    registrationDate = row[TUser.registration_date],
-    phoneNumber = row[TUser.phone_number],
-    email = row[TUser.email],
-    firstName = row[TUser.first_name],
-    lastName = row[TUser.last_name],
-    bio = row[TUser.bio],
-    birthday = row[TUser.birthday],
-    cover = row[TUser.cover]?.let(::FileId),
-    avatar = row[TUser.avatar]?.let(::FileId),
-)

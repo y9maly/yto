@@ -11,12 +11,27 @@ import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.serialization.json.json
 import kotlinx.rpc.withService
 import y9to.api.krpc.MainRpc
+import y9to.api.types.RefreshToken
 import y9to.api.types.SessionId
 import y9to.api.types.Token
+import y9to.sdk.internals.ACCESS_TOKEN_KEY
+import y9to.sdk.internals.REFRESH_TOKEN_KEY
+import y9to.sdk.internals.RequestController
+import y9to.sdk.internals.RpcClientController
+import y9to.sdk.internals.RpcController
+import y9to.sdk.internals.awaitRpc
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 
-actual suspend fun createSdkClient(host: String, port: Int, path: String): y9to.sdk.Client {
+actual suspend fun createSdkClient(
+    host: String,
+    port: Int,
+    path: String,
+    kvStorage: KVStorage,
+): Client {
+    val scope = CoroutineScope(SupervisorJob())
+
     val httpClient = HttpClient(CIO) {
         install(WebSockets)
         installKrpc {
@@ -26,44 +41,46 @@ actual suspend fun createSdkClient(host: String, port: Int, path: String): y9to.
         }
     }
 
-    var currentRpc: Pair<Job, MainRpc>? = null
-    val rpcFactory = suspend suspend@{
-        val current = currentRpc
-        if (current != null && current.first.isActive)
-            return@suspend current
-        currentRpc = null
-
-        val rpcClient = httpClient.rpc {
-            url {
-                this.host = "localhost"
-                this.port = 8103
-                encodedPath = "/api"
+    val rpcClientController = RpcClientController(
+        scope = scope,
+        rpcClientFactory = {
+            httpClient.rpc {
+                url {
+                    this.host = host
+                    this.port = port
+                    encodedPath = path
+                }
             }
+        },
+    )
+
+    val rpcController = RpcController(
+        scope = scope,
+        rpcClientController = rpcClientController,
+    )
+
+    while (kvStorage.getString(REFRESH_TOKEN_KEY) == null) {
+        try {
+            val (refreshToken, accessToken) = rpcController.awaitRpc().auth.createSession()
+            kvStorage.put(REFRESH_TOKEN_KEY, refreshToken.string)
+            kvStorage.put(ACCESS_TOKEN_KEY, accessToken.string)
+        } catch (e: Exception) {
+            e.printStackTrace()
+            delay(1000.milliseconds)
         }
-
-        val job = Job().let { job ->
-            GlobalScope.launch {
-                rpcClient.webSocketSession.await().coroutineContext.job.join()
-                rpcClient.awaitCompletion()
-                job.cancel()
-            }
-        }
-
-        val rpc = MainRpc(
-            rpcClient.withService(),
-            rpcClient.withService(),
-            rpcClient.withService(),
-            rpcClient.withService(),
-        )
-
-        currentRpc = job to rpc
-        return@suspend job to rpc
     }
 
-    val rpc = rpcFactory().second
+    val requestController = RequestController(
+        scope = scope,
+        kvStorage = kvStorage,
+        rpcController = rpcController,
+    )
 
-    val token = Token(Token.Unsafe(SessionId(2), "0.0.1"))
-    val session = rpc.auth.getSession(token)
-    val scope = CoroutineScope(SupervisorJob())
-    return Client(token, session, httpClient, scope, rpcFactory)
+    return Client(
+        scope = scope,
+        kvStorage = kvStorage,
+        httpClient = httpClient,
+        requestController = requestController,
+        rpcController = rpcController,
+    )
 }
