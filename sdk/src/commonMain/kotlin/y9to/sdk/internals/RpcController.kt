@@ -5,7 +5,7 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.rpc.withService
-import y9to.api.krpc.MainRpc
+import y9to.api.krpc.RpcCollection
 import y9to.libs.stdlib.coroutines.flow.firstNotNull
 
 
@@ -17,7 +17,8 @@ class RpcController(
         if (rpcClient == null)
             return@map null
 
-        MainRpc(
+        RpcCollection(
+            rpcClient.withService(),
             rpcClient.withService(),
             rpcClient.withService(),
             rpcClient.withService(),
@@ -26,5 +27,5 @@ class RpcController(
     }.stateIn(scope, SharingStarted.Eagerly, null)
 }
 
-internal suspend fun RpcController.awaitRpc(): MainRpc =
+internal suspend fun RpcController.awaitRpc(): RpcCollection =
     rpc.firstNotNull()

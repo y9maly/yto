@@ -2,18 +2,12 @@ package y9to.sdk
 
 import io.ktor.client.*
 import io.ktor.client.engine.cio.*
-import io.ktor.client.plugins.*
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
 import kotlinx.rpc.krpc.ktor.client.installKrpc
 import kotlinx.rpc.krpc.ktor.client.rpc
 import kotlinx.rpc.krpc.serialization.json.json
-import kotlinx.rpc.withService
-import y9to.api.krpc.MainRpc
-import y9to.api.types.RefreshToken
-import y9to.api.types.SessionId
-import y9to.api.types.Token
 import y9to.sdk.internals.ACCESS_TOKEN_KEY
 import y9to.sdk.internals.REFRESH_TOKEN_KEY
 import y9to.sdk.internals.RequestController
@@ -21,7 +15,6 @@ import y9to.sdk.internals.RpcClientController
 import y9to.sdk.internals.RpcController
 import y9to.sdk.internals.awaitRpc
 import kotlin.time.Duration.Companion.milliseconds
-import kotlin.time.Duration.Companion.seconds
 
 
 actual suspend fun createSdkClient(

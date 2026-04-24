@@ -8,7 +8,7 @@ import kotlinx.rpc.krpc.serialization.json.json
 import y9to.api.krpc.*
 
 
-fun Application.krpcApiModule(rpc: MainRpc) {
+fun Application.krpcApiModule(rpc: RpcCollection) {
     install(Krpc) {
         serialization {
             json()
@@ -21,6 +21,7 @@ fun Application.krpcApiModule(rpc: MainRpc) {
             registerService<UserRpc> { rpc.user }
             registerService<PostRpc> { rpc.post }
             registerService<FileRpc> { rpc.file }
+            registerService<UpdateRpc> { rpc.update }
         }
     }
 }

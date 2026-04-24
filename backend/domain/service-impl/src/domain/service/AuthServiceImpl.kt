@@ -5,6 +5,7 @@ import backend.core.types.ClientId
 import backend.core.types.Session
 import backend.core.types.SessionId
 import domain.event.AuthStateChanged
+import domain.event.SessionCreated
 import domain.service.result.LogInResult
 import domain.service.result.LogOutResult
 import domain.service.result.map
@@ -62,6 +63,10 @@ class AuthServiceImpl(
         return result.map()
     }
 
+    override suspend fun getAuthenticatedSessions(client: ClientId): Set<SessionId> {
+        return repo.auth.getAuthenticatedSessions(client)
+    }
+
     override suspend fun existsSession(id: SessionId): Boolean {
         return repo.auth.existsSession(id)
     }
@@ -72,5 +77,8 @@ class AuthServiceImpl(
 
     override suspend fun createSession(): Session {
         return repo.auth.createSession(clock.now())
+            .also {
+                eventCollector.emit(SessionCreated(it))
+            }
     }
 }

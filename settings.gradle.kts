@@ -62,11 +62,19 @@ include("presentation") {
         "krpc"()
         "krpc-default"()
     }
-    "workers"()
+    "workers" {
+        "updatePublisher"()
+    }
     "integration" {
         "context"()
         "authenticator"()
         "authenticator-jwtManager"()
+        "updateSubscriptionsStore"()
+        "updateSubscriptionsStore-redis"()
+        "updateProducer"()
+        "updateProducer-updateManager"()
+        "updateProvider"()
+        "updateProvider-updateManager"()
         "tokenProvider"()
         "tokenProvider-jwtManager"()
         "assembler"()
@@ -74,6 +82,8 @@ include("presentation") {
         "assembler-presenter-impl"()
     }
     "infrastructure" {
+        "updateManager"()
+        "updateManager-impl"()
         "jwtManager"()
         "jwtManager-impl"()
     }

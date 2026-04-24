@@ -7,9 +7,10 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
 import presentation.assembler.AssemblerCollection
 import presentation.authenticator.Authenticator
 import presentation.infra.jwtManager.JwtManager
+import presentation.infra.updateManager.UpdateManager
 import presentation.presenter.PresenterCollection
 import y9to.api.controller.ControllerCollection
-import y9to.api.krpc.MainRpc
+import y9to.api.krpc.RpcCollection
 
 
 data class Monolith(
@@ -20,7 +21,8 @@ data class Monolith(
     val presenter: PresenterCollection,
     val assembler: AssemblerCollection,
     val controller: ControllerCollection,
+    val updateManager: UpdateManager,
     val jwtManager: JwtManager,
     val authenticator: Authenticator,
-    val rpc: MainRpc,
+    val rpc: RpcCollection,
 )

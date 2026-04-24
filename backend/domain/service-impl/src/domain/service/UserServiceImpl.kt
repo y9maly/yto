@@ -1,7 +1,10 @@
 package domain.service
 
 import backend.core.types.*
+import domain.event.UserEdited
+import domain.event.UserRegistered
 import domain.service.result.*
+import integration.eventCollector.EventCollector
 import integration.repository.RepositoryCollection
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.asError
@@ -12,6 +15,7 @@ import kotlin.time.Clock
 
 class UserServiceImpl(
     private val repo: RepositoryCollection,
+    private val eventCollector: EventCollector,
     private val clock: Clock,
 ) : UserService {
     override suspend fun resolve(ref: UserRef): UserId? {
@@ -45,7 +49,7 @@ class UserServiceImpl(
         cover: Optional<FileId?>,
         avatar: Optional<FileId?>,
     ): User {
-        return repo.user.create(
+        val user = repo.user.create(
             registrationDate = clock.now(),
             phoneNumber = phoneNumber,
             email = email,
@@ -56,6 +60,10 @@ class UserServiceImpl(
             cover = cover,
             avatar = avatar,
         )
+
+        eventCollector.emit(UserRegistered(user))
+
+        return user
     }
 
     override suspend fun edit(
@@ -105,7 +113,7 @@ class UserServiceImpl(
             ).asError()
         }
 
-        return repo.user.edit(
+        val result = repo.user.edit(
             id = id,
             phoneNumber = phoneNumber,
             email = email,
@@ -115,6 +123,12 @@ class UserServiceImpl(
             birthday = birthday,
             cover = cover,
             avatar = avatar,
-        ).map()
+        )
+
+        result.onSuccess { result ->
+            eventCollector.emit(UserEdited(result.new))
+        }
+
+        return result.map()
     }
 }

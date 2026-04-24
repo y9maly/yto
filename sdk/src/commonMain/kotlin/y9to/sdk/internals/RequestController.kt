@@ -1,20 +1,16 @@
 package y9to.sdk.internals
 
 import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.CoroutineStart
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.NonCancellable
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
-import kotlinx.coroutines.flow.first
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import y9to.api.krpc.MainRpc
+import y9to.api.krpc.RpcCollection
 import y9to.api.types.RefreshToken
 import y9to.api.types.Token
 import y9to.libs.stdlib.coroutines.flow.collectIn
+import y9to.libs.stdlib.coroutines.flow.collectLatestIn
 import y9to.libs.stdlib.coroutines.flow.firstNotNull
 import y9to.sdk.KVStorage
 import kotlin.time.Duration.Companion.milliseconds
@@ -22,7 +18,7 @@ import kotlin.time.Duration.Companion.milliseconds
 
 internal class RequestScope(
     val token: Token,
-    val rpc: MainRpc,
+    val rpc: RpcCollection,
 )
 
 internal class RequestController(
@@ -37,7 +33,7 @@ internal class RequestController(
         scope.launch {
             _accessToken.value = kvStorage.getString(ACCESS_TOKEN_KEY)?.let(::Token)
 
-            combine(_accessToken, rpcController.rpc) { accessToken, rpc ->
+            combine(accessToken, rpcController.rpc) { accessToken, rpc ->
                 if (accessToken != null)
                     return@combine
                 if (rpc == null)

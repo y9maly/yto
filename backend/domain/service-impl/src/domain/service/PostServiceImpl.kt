@@ -1,9 +1,12 @@
 package domain.service
 
 import backend.core.types.*
+import domain.event.PostCreated
+import domain.event.PostDeleted
 import domain.service.result.CreatePostResult
 import domain.service.result.DeletePostResult
 import domain.service.result.map
+import integration.eventCollector.EventCollector
 import integration.repository.RepositoryCollection
 import integration.repository.PostRepository
 import y9to.libs.paging.*
@@ -12,6 +15,7 @@ import kotlin.time.Clock
 
 class PostServiceImpl(
     private val repo: RepositoryCollection,
+    private val eventCollector: EventCollector,
     private val clock: Clock,
 ) : PostService {
     override suspend fun resolve(ref: PostRef): PostId? {
@@ -31,17 +35,29 @@ class PostServiceImpl(
         val inputContent = content.map()
         val inputLocation = location.map()
 
-        return repo.post.create(
+        val result = repo.post.create(
             creationDate = clock.now(),
             author = author,
             replyTo = replyTo,
             content = inputContent,
             location = inputLocation,
-        ).map()
+        )
+
+        result.onSuccess { post ->
+            eventCollector.emit(PostCreated(post))
+        }
+
+        return result.map()
     }
 
     override suspend fun delete(post: PostId): DeletePostResult {
-        return repo.post.delete(post).map()
+        val result = repo.post.delete(post)
+
+        result.onSuccess {
+            eventCollector.emit(PostDeleted(post))
+        }
+
+        return result.map()
     }
 
     override suspend fun sliceGlobal(

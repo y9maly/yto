@@ -16,4 +16,5 @@ interface AuthRepository {
     suspend fun getAuthState(session: SessionId): AuthState?
     suspend fun logIn(session: SessionId, client: ClientId): LogInResult
     suspend fun logOut(session: SessionId): LogOutResult
+    suspend fun getAuthenticatedSessions(client: ClientId): Set<SessionId>
 }

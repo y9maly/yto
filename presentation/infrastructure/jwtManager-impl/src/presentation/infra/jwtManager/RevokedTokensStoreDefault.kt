@@ -1,20 +1,22 @@
 package presentation.infra.jwtManager
 
-import io.github.crackthecodeabhi.kreds.args.SetOption
-import io.github.crackthecodeabhi.kreds.connection.KredsClient
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.SetArgs
+import io.lettuce.core.api.coroutines.RedisCoroutinesCommands
 import kotlin.time.Instant
+import kotlin.time.toJavaInstant
 
 
+@OptIn(ExperimentalLettuceCoroutinesApi::class)
 class RevokedTokensStoreDefault(
-    private val redisClient: KredsClient,
+    private val commands: RedisCoroutinesCommands<String, String>,
 ) : RevokedTokensStore {
     override suspend fun isRevoked(accessJti: String): Boolean {
-        return redisClient.exists("jwt:revoked-access:$accessJti") == 1L
+        return commands.exists("jwt:revoked-access:$accessJti") != 0L
     }
 
     override suspend fun revoke(accessJti: String, until: Instant) {
-        redisClient.set("jwt:revoked-access:$accessJti", "revoked", SetOption.Builder()
-            .exatTimestamp(until.toEpochMilliseconds().toULong())
-            .build())
+        commands.set("jwt:revoked-access:$accessJti", "revoked", SetArgs.Builder
+            .exAt(until.toJavaInstant()))
     }
 }

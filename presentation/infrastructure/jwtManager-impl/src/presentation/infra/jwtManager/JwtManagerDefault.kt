@@ -8,7 +8,6 @@ import com.auth0.jwt.algorithms.Algorithm
 import com.auth0.jwt.exceptions.AlgorithmMismatchException
 import com.auth0.jwt.exceptions.JWTVerificationException
 import com.auth0.jwt.exceptions.TokenExpiredException
-import kotlinx.coroutines.awaitAll
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.time.Instant

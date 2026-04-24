@@ -6,9 +6,7 @@ import integration.fileStorage.FileStorage
 import integration.fileStorage.LocalFileStorage
 import integration.repository.PostgresRepositoryCollection
 import integration.repository.RepositoryCollection
-import io.github.crackthecodeabhi.kreds.connection.Endpoint
-import io.github.crackthecodeabhi.kreds.connection.KredsClient
-import io.github.crackthecodeabhi.kreds.connection.newClient
+import io.lettuce.core.RedisClient
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -22,16 +20,18 @@ import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 import presentation.api.krpc.AuthRpcDefault
 import presentation.api.krpc.FileRpcDefault
 import presentation.api.krpc.PostRpcDefault
+import presentation.api.krpc.UpdateRpcDefault
 import presentation.api.krpc.UserRpcDefault
-import presentation.assembler.FileAssemblerImpl
 import presentation.assembler.AssemblerCollection
+import presentation.assembler.FileAssemblerImpl
 import presentation.assembler.PostAssemblerImpl
 import presentation.assembler.UserAssemblerImpl
 import presentation.authenticator.Authenticator
 import presentation.presenter.*
 import presentation.tokenProvider.TokenProvider
+import presentation.updateProvider.UpdateProvider
 import y9to.api.controller.*
-import y9to.api.krpc.MainRpc
+import y9to.api.krpc.RpcCollection
 import y9to.api.types.FileSink
 import y9to.api.types.FileSource
 import kotlin.io.encoding.Base64
@@ -42,14 +42,16 @@ import kotlin.time.Clock
 
 internal fun createRpc(
     authenticator: Authenticator,
+    updateProvider: UpdateProvider,
     tokenProvider: TokenProvider,
     controller: ControllerCollection
-): MainRpc {
-    return MainRpc(
+): RpcCollection {
+    return RpcCollection(
         auth = AuthRpcDefault(authenticator, tokenProvider, controller.auth),
         user = UserRpcDefault(authenticator, controller.user),
         post = PostRpcDefault(authenticator, controller.post),
-        file = FileRpcDefault(authenticator, controller.file)
+        file = FileRpcDefault(authenticator, controller.file),
+        update = UpdateRpcDefault(authenticator, updateProvider),
     )
 }
 
@@ -111,8 +113,8 @@ internal fun createService(
 ): ServiceCollection {
     return ServiceCollection(
         auth = AuthServiceImpl(repository, eventCollector, clock),
-        user = UserServiceImpl(repository, clock),
-        post = PostServiceImpl(repository, clock),
+        user = UserServiceImpl(repository, eventCollector, clock),
+        post = PostServiceImpl(repository, eventCollector, clock),
         file = FileServiceImpl(repository, fileStorage, clock),
     )
 }
@@ -132,8 +134,8 @@ internal fun createFileStorage(directory: String): FileStorage {
     )
 }
 
-internal fun createRedisClient(url: String): KredsClient {
-    return newClient(Endpoint.from(url))
+internal fun createRedisClient(url: String): RedisClient {
+    return RedisClient.create(url)
 }
 
 internal fun createDatabase(url: String): R2dbcDatabase {

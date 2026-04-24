@@ -15,6 +15,9 @@ import backend.core.types.Session
 import backend.core.types.SessionId
 import backend.core.types.UserId
 import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.flow.toSet
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.intLiteral
 import org.jetbrains.exposed.v1.r2dbc.deleteWhere
@@ -115,5 +118,16 @@ internal class PostgresAuthRepository(private val main: MainRepository) : AuthRe
         }
 
         LogOutOk.asOk()
+    }
+
+    override suspend fun getAuthenticatedSessions(client: ClientId): Set<SessionId> = main.transaction(ReadOnly) {
+        TAuthState.select(TAuthState.session)
+            .where {
+                when (client) {
+                    is UserId -> TAuthState.user eq client.long
+                }
+            }
+            .map { SessionId(it[TAuthState.session]) }
+            .toSet()
     }
 }

@@ -2,10 +2,9 @@
 
 package container.monolith
 
-import presentation.infra.jwtManager.JwtManagerDefault
-import presentation.infra.jwtManager.PayloadProviderDefault
-import presentation.infra.jwtManager.RevokedTokensStoreDefault
 import integration.eventCollector.KafkaEventCollector
+import io.lettuce.core.ExperimentalLettuceCoroutinesApi
+import io.lettuce.core.api.coroutines
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.plus
@@ -13,14 +12,22 @@ import org.apache.kafka.clients.producer.KafkaProducer
 import org.apache.kafka.clients.producer.ProducerConfig
 import org.apache.kafka.common.serialization.StringSerializer
 import presentation.authenticator.JwtAuthenticator
+import presentation.infra.jwtManager.JwtManagerDefault
+import presentation.infra.jwtManager.PayloadProviderDefault
 import presentation.infra.jwtManager.RefreshTokensStoreRedis
+import presentation.infra.jwtManager.RevokedTokensStoreDefault
+import presentation.infra.updateManager.UpdateManagerDefault
+import presentation.infra.updateManager.UpdateProducerRedisLettuce
+import presentation.infra.updateManager.UpdateProviderRedisLettuce
 import presentation.tokenProvider.JwtTokenProvider
+import presentation.updateProvider.UpdateProviderDefault
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.minutes
 
 
+@OptIn(ExperimentalLettuceCoroutinesApi::class)
 suspend fun instantiate(
     authSecret: String = MonolithDefaults.authSecret,
     redisUrl: String = MonolithDefaults.redisUrl,
@@ -57,15 +64,22 @@ suspend fun instantiate(
 
     // presentation/infrastructure
 
+    val updateProducer = UpdateProducerRedisLettuce(redisClient.connect().coroutines())
+    val updateProvider = UpdateProviderRedisLettuce(redisClient.connect().coroutines())
+    val updateManager = UpdateManagerDefault(
+        updateProducer = updateProducer,
+        updateProvider = updateProvider,
+    )
+
     val jwtManager = JwtManagerDefault(
         payloadProvider = PayloadProviderDefault(
             authService = service.auth,
         ),
         refreshTokensStore = RefreshTokensStoreRedis(
-            redisClient = redisClient,
+            commands = redisClient.connect().coroutines(),
         ),
         revokedTokensStore = RevokedTokensStoreDefault(
-            redisClient = redisClient,
+            commands = redisClient.connect().coroutines(),
         ),
         checkTokenRevoke = false,
         secret = authSecret,
@@ -94,6 +108,7 @@ suspend fun instantiate(
 
     val rpc = createRpc(
         authenticator = authenticator,
+        updateProvider = UpdateProviderDefault(updateManager),
         tokenProvider = tokenProvider,
         controller = controller,
     )
@@ -106,6 +121,7 @@ suspend fun instantiate(
         presenter = presenter,
         assembler = assembler,
         controller = controller,
+        updateManager = updateManager,
         jwtManager = jwtManager,
         authenticator = authenticator,
         rpc = rpc,
