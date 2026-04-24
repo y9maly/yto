@@ -1,6 +1,13 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
     id("org.jetbrains.kotlinx.rpc.plugin") version libs.versions.kotlinx.rpc
+    id("com.gradleup.shadow")
+    application
+}
+
+application {
+    mainClass = "container.monolith.MainKt"
 }
 
 repositories {
@@ -38,6 +45,7 @@ dependencies {
     implementation(project(":backend:integration:data:repository-postgres"))
     implementation(project(":backend:integration:data:fileStorage-local"))
 
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("ch.qos.logback:logback-classic:1.5.27")
     implementation("org.apache.kafka:kafka-clients:4.2.0")
     implementation("io.github.crackthecodeabhi:kreds:0.9.1")
@@ -54,6 +62,8 @@ dependencies {
     implementation("io.ktor:ktor-server-host-common-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-netty-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
+    implementation("io.ktor:ktor-server-cors:$ktorVersion")
+    implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
 
     val exposedVersion = "1.2.0"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")
@@ -61,4 +71,12 @@ dependencies {
     implementation("com.h2database:h2:2.4.240")
     implementation("org.postgresql:r2dbc-postgresql:1.0.7.RELEASE")
     implementation("com.zaxxer:HikariCP:5.0.1")
+}
+
+tasks.named<Tar>("distTar") {
+    duplicatesStrategy = DuplicatesStrategy.WARN
+}
+
+tasks.named<Zip>("distZip") {
+    duplicatesStrategy = DuplicatesStrategy.WARN
 }

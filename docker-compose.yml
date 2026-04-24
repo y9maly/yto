@@ -1,0 +1,54 @@
+services:
+  yt-postgres:
+    image: postgres@sha256:1ffc019dae94eca6b09a49ca67d37398951346de3c3d0cfe23d8d4ca33da83fb
+    container_name: yt-postgres
+    ports:
+      - "5050:5432"
+    environment:
+      - POSTGRES_PASSWORD=qwerty
+    volumes:
+      - ./backend/infrastructure/postgres/initdb.sql:/docker-entrypoint-initdb.d/initdb.sql
+
+  yt-redis:
+    image: redis@sha256:3906b477e4b60250660573105110c28bfce93b01243eab37610a484daebceb04
+    container_name: yt-redis
+    ports:
+      - "7874:6379"
+
+  yt-kafka:
+    image: confluentinc/cp-kafka@sha256:acbbf674f2ed40e5d0a8ca51beb0f00692c866fc22b5ce06f8cadbdc54cd4436
+    container_name: yt-kafka
+    ports:
+      - "7678:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@localhost:9093
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://yt-kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: CONTROLLER:PLAINTEXT,PLAINTEXT:PLAINTEXT
+      CLUSTER_ID: ErovUW9ZQWeVPC1YlahXeg
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+
+  yt-backend:
+    build:
+      context: .
+    container_name: yt-backend
+    ports:
+      - "8103:8103"
+    environment:
+      AUTH_SECRET: AWPe04G9E2
+      KTOR_HOST: 0.0.0.0
+      KTOR_PORT: 8103
+      KTOR_FILE_GATEWAY_ADDRESS: https://yto.y9maly.me:443
+      KAFKA_URL: yt-kafka:9092
+      POSTGRES_URL: r2dbc:postgresql://postgres:qwerty@yt-postgres:5432/db
+      REDIS_URL: redis://yt-redis:6379
+      YTO_FILES_DIRECTORY: /files
+      CORS_HOST_STRATEGY: "[\"https://yto.y9maly.me\"]"
+      STATIC_FILES: "[{\"remote_path\": \"/\", \"directory\": \"/static\", \"default\": \"index.html\"}]"
+    depends_on:
+      - yt-postgres
+      - yt-redis
+      - yt-kafka

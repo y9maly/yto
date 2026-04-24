@@ -9,9 +9,8 @@ import kotlin.jvm.JvmName
 import kotlin.time.Instant
 
 
-@JvmInline
 @SerialName("PostId")
-@S value class PostId(val long: Long) : InputPost
+@S data class PostId(val long: Long) : InputPost
 
 
 @S data class Post(

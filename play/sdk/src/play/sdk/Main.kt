@@ -23,7 +23,7 @@ import kotlin.io.path.readBytes
 
 
 suspend fun main(): Unit = coroutineScope {
-    val sdk = createSdkClient("localhost", 8103, "/api", KVStorageInMemory())
+    val sdk = createSdkClient(false, "localhost", 8103, "/api", KVStorageInMemory())
 
     testUploadDownload(sdk, Path("/Users/mali/IdeaProjects/yto/.testFiles/50m.jpg"))
 }

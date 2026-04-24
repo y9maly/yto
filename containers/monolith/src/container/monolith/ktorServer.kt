@@ -7,7 +7,10 @@ import io.ktor.http.ContentType
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.http.content.staticFiles
 import io.ktor.server.netty.Netty
+import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytesWriter
@@ -24,19 +27,78 @@ import kotlinx.io.Buffer
 import kotlinx.io.UnsafeIoApi
 import kotlinx.io.unsafe.UnsafeBufferOperations
 import presentation.gateway.ktorKrpc.krpcApiModule
+import java.io.File
 import kotlin.io.encoding.Base64
 
 
-fun Monolith.startKtorServer(host: String, port: Int, wait: Boolean) {
+data class StartKtorServerConfig(
+    val host: String,
+    val port: Int,
+
+    // null = no cors plugin
+    val cors: Cors?,
+
+    val staticFiles: List<StaticFiles> = emptyList(),
+) {
+    data class Cors(
+        // null = any host
+        // format: <schema>://<optional subdomain>.<domain>.<zone>
+        // for example: listOf("http://domain.zone", "https://domain.zone", "https://subdomain.domain.zone")
+        val hosts: List<String>?,
+    )
+
+    data class StaticFiles(
+        val remotePath: String,
+        val directory: String,
+        val default: String? = null,
+    )
+}
+
+fun Monolith.startKtorServer(
+    config: StartKtorServerConfig,
+    wait: Boolean,
+) {
     embeddedServer(
         Netty,
-        port = port,
-        host = host,
+        port = config.port,
+        host = config.host,
     ) {
+        install(ContentNegotiation)
+
         install(WebSockets)
+
         krpcApiModule(rpc)
 
+        if (config.cors != null) {
+            install(CORS) {
+                allowHeaders { true }
+
+                anyMethod()
+
+                if (config.cors.hosts == null) {
+                    anyHost()
+                } else {
+                    config.cors.hosts.forEach { urlString ->
+                        if ("://" !in urlString)
+                            error("Scheme in '$urlString' is required (http/https for example)")
+                        val schema = urlString.substringBefore("://")
+                        val host = urlString.substringAfter("://")
+                        allowHost(host, schemes = listOf(schema))
+                    }
+                }
+            }
+        }
+
         routing {
+            config.staticFiles.forEach { staticFiles ->
+                staticFiles(
+                    remotePath = staticFiles.remotePath,
+                    dir = File(staticFiles.directory),
+                ) {
+                    default(staticFiles.default)
+                }
+            }
+
             post("file/upload/{uri}") {
                 val uriBase64 = call.parameters["uri"]
                     ?: return@post call.respond(HttpStatusCode.BadRequest)

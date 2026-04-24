@@ -1,7 +1,8 @@
 package y9to.sdk
 
 import io.ktor.client.*
-import io.ktor.client.engine.cio.*
+import io.ktor.client.engine.HttpClientEngineConfig
+import io.ktor.client.engine.HttpClientEngineFactory
 import io.ktor.client.plugins.websocket.*
 import io.ktor.http.*
 import kotlinx.coroutines.*
@@ -17,7 +18,10 @@ import y9to.sdk.internals.awaitRpc
 import kotlin.time.Duration.Companion.milliseconds
 
 
+internal expect val HttpClientEngine: HttpClientEngineFactory<HttpClientEngineConfig>
+
 actual suspend fun createSdkClient(
+    useHttps: Boolean,
     host: String,
     port: Int,
     path: String,
@@ -25,7 +29,7 @@ actual suspend fun createSdkClient(
 ): Client {
     val scope = CoroutineScope(SupervisorJob())
 
-    val httpClient = HttpClient(CIO) {
+    val httpClient = HttpClient(HttpClientEngine) {
         install(WebSockets)
         installKrpc {
             serialization {
@@ -39,6 +43,10 @@ actual suspend fun createSdkClient(
         rpcClientFactory = {
             httpClient.rpc {
                 url {
+                    if (useHttps)
+                        this.protocol = URLProtocol.WSS
+                    else
+                        this.protocol = URLProtocol.WS
                     this.host = host
                     this.port = port
                     encodedPath = path

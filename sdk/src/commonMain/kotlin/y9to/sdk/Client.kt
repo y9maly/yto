@@ -23,6 +23,7 @@ class Client internal constructor(
 
 
 expect suspend fun createSdkClient(
+    useHttps: Boolean,
     host: String,
     port: Int,
     path: String,
