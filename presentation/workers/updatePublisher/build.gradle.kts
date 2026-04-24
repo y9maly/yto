@@ -16,6 +16,7 @@ dependencies {
     implementation("org.apache.kafka:kafka-clients:4.2.0")
     implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
 
+    api(project(":presentation:integration:updateSubscriptionsStore"))
     api(project(":presentation:integration:updateProducer"))
     api(project(":presentation:integration:presenter"))
     api(project(":presentation:types"))

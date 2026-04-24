@@ -40,6 +40,7 @@ suspend fun Monolith.startWorkers(
                 ),
             ),
             producer = UpdateProducerDefault(updateManager),
+            updateSubscriptionsStore = updateSubscriptionsStore,
             presenter = presenter,
             sessionProvider = SessionProviderService(service.auth),
         ).start()

@@ -4,9 +4,12 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 
 
-@S sealed interface UpdateSubscription {
+@S sealed interface ApiUpdateSubscription {
+    @SerialName("UserEdited")
+    @S data class UserEdited(val user: UserId) : ApiUpdateSubscription
+
     @SerialName("PostContentEdited")
-    @S data class PostContentEdited(val post: PostId) : UpdateSubscription
+    @S data class PostContentEdited(val post: PostId) : ApiUpdateSubscription
 }
 
 @S sealed interface Update {

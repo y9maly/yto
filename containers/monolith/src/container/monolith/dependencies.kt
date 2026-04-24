@@ -30,6 +30,7 @@ import presentation.authenticator.Authenticator
 import presentation.presenter.*
 import presentation.tokenProvider.TokenProvider
 import presentation.updateProvider.UpdateProvider
+import presentation.updateSubscriptionsStore.UpdateSubscriptionsStore
 import y9to.api.controller.*
 import y9to.api.krpc.RpcCollection
 import y9to.api.types.FileSink
@@ -41,8 +42,10 @@ import kotlin.time.Clock
 
 
 internal fun createRpc(
+    assembler: AssemblerCollection,
     authenticator: Authenticator,
     updateProvider: UpdateProvider,
+    updateSubscriptionsStore: UpdateSubscriptionsStore,
     tokenProvider: TokenProvider,
     controller: ControllerCollection
 ): RpcCollection {
@@ -51,7 +54,7 @@ internal fun createRpc(
         user = UserRpcDefault(authenticator, controller.user),
         post = PostRpcDefault(authenticator, controller.post),
         file = FileRpcDefault(authenticator, controller.file),
-        update = UpdateRpcDefault(authenticator, updateProvider),
+        update = UpdateRpcDefault(assembler, authenticator, updateProvider, updateSubscriptionsStore),
     )
 }
 

@@ -10,7 +10,7 @@ import kotlin.time.Instant
 
 
 @SerialName("UserId")
-@S data class UserId(val long: Long) : ClientId
+@S data class UserId(val long: Long) : InputUser, ClientId
 
 @S data class User(
     val id: UserId,

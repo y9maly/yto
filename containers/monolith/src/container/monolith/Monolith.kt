@@ -9,6 +9,7 @@ import presentation.authenticator.Authenticator
 import presentation.infra.jwtManager.JwtManager
 import presentation.infra.updateManager.UpdateManager
 import presentation.presenter.PresenterCollection
+import presentation.updateSubscriptionsStore.UpdateSubscriptionsStore
 import y9to.api.controller.ControllerCollection
 import y9to.api.krpc.RpcCollection
 
@@ -22,6 +23,7 @@ data class Monolith(
     val assembler: AssemblerCollection,
     val controller: ControllerCollection,
     val updateManager: UpdateManager,
+    val updateSubscriptionsStore: UpdateSubscriptionsStore,
     val jwtManager: JwtManager,
     val authenticator: Authenticator,
     val rpc: RpcCollection,

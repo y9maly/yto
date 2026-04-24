@@ -13,7 +13,6 @@ kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 dependencies {
     api(project(":libs:paging:core"))
     api(project(":presentation:types"))
-    api(project(":presentation:input"))
     api(project(":presentation:result"))
     api(project(":presentation:integration:context"))
     implementation(libs.kotlinx.rpc.core)

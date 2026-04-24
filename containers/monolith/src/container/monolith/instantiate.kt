@@ -21,6 +21,7 @@ import presentation.infra.updateManager.UpdateProducerRedisLettuce
 import presentation.infra.updateManager.UpdateProviderRedisLettuce
 import presentation.tokenProvider.JwtTokenProvider
 import presentation.updateProvider.UpdateProviderDefault
+import presentation.updateSubscriptionsStore.UpdateSubscriptionsStoreRedis
 import java.util.*
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.days
@@ -71,6 +72,8 @@ suspend fun instantiate(
         updateProvider = updateProvider,
     )
 
+    val updateSubscriptionsStore = UpdateSubscriptionsStoreRedis(redisClient.connect().coroutines())
+
     val jwtManager = JwtManagerDefault(
         payloadProvider = PayloadProviderDefault(
             authService = service.auth,
@@ -107,8 +110,10 @@ suspend fun instantiate(
     val tokenProvider = JwtTokenProvider(jwtManager = jwtManager)
 
     val rpc = createRpc(
+        assembler = assembler,
         authenticator = authenticator,
         updateProvider = UpdateProviderDefault(updateManager),
+        updateSubscriptionsStore = updateSubscriptionsStore,
         tokenProvider = tokenProvider,
         controller = controller,
     )
@@ -122,6 +127,7 @@ suspend fun instantiate(
         assembler = assembler,
         controller = controller,
         updateManager = updateManager,
+        updateSubscriptionsStore = updateSubscriptionsStore,
         jwtManager = jwtManager,
         authenticator = authenticator,
         rpc = rpc,

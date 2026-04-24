@@ -35,9 +35,9 @@ class UserControllerDefault(
 
     context(_: Context)
     override suspend fun get(input: InputUser): User? = context {
-        val userLink = input.resolve()
+        val userId = input.resolve()
             ?: return null
-        val user = service.user.get(userLink)
+        val user = service.user.get(userId)
             ?: return null
         return user.mapAsUser()
     }

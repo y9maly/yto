@@ -1,10 +1,9 @@
-@file:JvmName("InputPostKt")
-
 package y9to.api.types
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import kotlin.jvm.JvmName
+
 
 @S sealed interface InputFeed {
     @SerialName("Global")
@@ -15,9 +14,6 @@ import kotlin.jvm.JvmName
 }
 
 @S sealed interface InputPost {
-    @SerialName("Id")
-    @S data class Id(val id: PostId) : InputPost
-
     @SerialName("MyLastPost")
     @S data object MyLastPost : InputPost
 

@@ -1,5 +1,6 @@
 plugins {
     kotlin("jvm")
+    kotlin("plugin.serialization")
 }
 
 repositories {
@@ -7,10 +8,10 @@ repositories {
 }
 
 kotlin.sourceSets.main.get().kotlin.srcDir("src")
-kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 
 dependencies {
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")
+
     api(project(":backend:types"))
     api(project(":presentation:types"))
-    api(project(":presentation:integration:context"))
 }

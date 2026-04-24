@@ -13,8 +13,8 @@ class UserAssemblerImpl(
     context(context: Context)
     override suspend fun resolve(input: InputUser): UserId? {
         when (input) {
-            is InputUser.Id -> {
-                return input.id.map()
+            is y9to.api.types.UserId -> {
+                return input.map()
             }
         }
     }

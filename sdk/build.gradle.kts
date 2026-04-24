@@ -14,7 +14,6 @@ kotlin {
         api(project("out-ports"))
 
         api(project(":presentation:types"))
-        api(project(":presentation:input"))
         api(project(":presentation:result"))
         api(project(":presentation:api:krpc"))
         api(project(":presentation:api:endpoint"))

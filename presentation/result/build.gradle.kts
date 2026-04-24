@@ -12,7 +12,6 @@ kotlin.sourceSets.commonMain.get().kotlin.srcDir("src")
 
 kotlin {
     sourceSets.commonMain.dependencies {
-        api(project(":presentation:input"))
         api(project(":presentation:types"))
         api(project(":common:types"))
 

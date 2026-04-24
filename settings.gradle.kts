@@ -51,7 +51,6 @@ include("containers") {
 include("presentation") {
     "types"()
     "result"()
-    "input"()
     "gateway" {
         "ktor-krpc"()
     }

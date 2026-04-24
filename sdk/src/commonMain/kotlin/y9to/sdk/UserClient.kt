@@ -5,6 +5,7 @@ import kotlinx.coroutines.flow.*
 import y9to.api.types.*
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.asError
+import y9to.libs.stdlib.coroutines.flow.collectIn
 import y9to.libs.stdlib.optional.Optional
 import y9to.libs.stdlib.optional.none
 import y9to.sdk.internals.ClientOwner
@@ -15,17 +16,39 @@ import kotlin.coroutines.cancellation.CancellationException
 class UserClient internal constructor(override val client: Client) : ClientOwner {
     val myProfile: Flow<MyProfile?> = channelFlow {
         client.auth.authState.collectLatest { authState ->
-            if (authState !is AuthState.Authorized)
+            if (authState !is AuthState.Authorized) {
+                send(null)
                 return@collectLatest
+            }
 
             var profile = request { rpc.user.getMyProfile(token) }
-                ?: return@collectLatest
+                ?: run {
+                    send(null)
+                    return@collectLatest
+                }
             send(profile)
 
-            client.updateCenter.updates.filterIsInstance<Update.UserEdited>().collect { update ->
+            client.updateCenter.updates.filterIsInstance<Update.AuthStateChanged>().collectIn(this) { update ->
+                when (update.authState) {
+                    is AuthState.Authorized -> {
+                        profile = request { rpc.user.getMyProfile(token) }
+                            ?: run {
+                                send(null)
+                                return@collectIn
+                            }
+                        send(profile)
+                    }
+
+                    AuthState.Unauthorized -> {
+                        send(null)
+                    }
+                }
+            }
+
+            client.updateCenter.updates.filterIsInstance<Update.UserEdited>().collectIn(this) { update ->
                 val user = update.newUser
                 if (user.id != profile.id)
-                    return@collect
+                    return@collectIn
 
                 send(MyProfile(
                     id = user.id,
@@ -45,22 +68,29 @@ class UserClient internal constructor(override val client: Client) : ClientOwner
         .distinctUntilChanged()
         .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
 
-    suspend fun get(id: UserId) = get(InputUser.Id(id))
     suspend fun get(input: InputUser): User? {
         return request { rpc.user.get(token, input) }
     }
 
-    fun getFlow(id: UserId) = getFlow(InputUser.Id(id))
-    fun getFlow(input: InputUser): Flow<User?> = flow {
-        while (true) {
-            try {
-                emit(get(input))
-            } catch (e: Exception) {
-                if (e is CancellationException) throw e
-                e.printStackTrace()
-            } finally {
-                delay((1500..3000L).random())
+    fun getFlow(input: InputUser): Flow<User?> = channelFlow {
+        var user = request { rpc.user.get(token, input) }
+            ?: run {
+                send(null)
+                return@channelFlow
             }
+        send(user)
+
+        client.updateCenter.subscribe(ApiUpdateSubscription.UserEdited(user.id))
+
+        try {
+            client.updateCenter.updates.filterIsInstance<Update.UserEdited>().collect { update ->
+                if (update.newUser.id != user.id)
+                    return@collect
+                user = update.newUser
+                send(user)
+            }
+        } finally {
+            client.updateCenter.unsubscribe(ApiUpdateSubscription.UserEdited(user.id))
         }
     }
 

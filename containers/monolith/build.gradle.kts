@@ -19,6 +19,8 @@ dependencies {
     implementation(project(":presentation:integration:updateProvider-updateManager"))
     implementation(project(":presentation:integration:updateProducer"))
     implementation(project(":presentation:integration:updateProducer-updateManager"))
+    implementation(project(":presentation:integration:updateSubscriptionsStore"))
+    implementation(project(":presentation:integration:updateSubscriptionsStore-redis"))
     implementation(project(":presentation:integration:tokenProvider"))
     implementation(project(":presentation:integration:tokenProvider-jwtManager"))
     implementation(project(":presentation:integration:authenticator"))

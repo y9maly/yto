@@ -13,6 +13,5 @@ dependencies {
     api(project(":backend:types"))
     api(project(":backend:input"))
     api(project(":presentation:types"))
-    api(project(":presentation:input"))
     api(project(":presentation:integration:context"))
 }

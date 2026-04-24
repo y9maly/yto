@@ -16,8 +16,8 @@ class PostAssemblerImpl(
 ) : PostAssembler {
     context(context: Context)
     override suspend fun resolve(input: InputPost): PostId? {
-        if (input is InputPost.Id)
-            return input.id.map()
+        if (input is y9to.api.types.PostId)
+            return input.map()
 
         val authState = authStateOrPut {
             service.auth.getAuthState(sessionId)
@@ -33,6 +33,11 @@ class PostAssemblerImpl(
         }
 
         return service.post.resolve(ref)
+    }
+
+    context(context: Context)
+    override suspend fun PostId(id: y9to.api.types.PostId): PostId {
+        return id.map()
     }
 
     context(context: Context)

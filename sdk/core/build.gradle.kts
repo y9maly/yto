@@ -11,7 +11,6 @@ repositories {
 kotlin {
     sourceSets.commonMain.dependencies {
         api(project(":presentation:types"))
-        api(project(":presentation:input"))
         api(project(":presentation:result"))
 
         implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")

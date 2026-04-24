@@ -35,8 +35,8 @@ class PostControllerDefault(
 
     context(_: Context)
     override suspend fun get(input: InputPost): Post? = context {
-        val postLink = input.resolve() ?: return null
-        val post = service.post.get(postLink) ?: return null
+        val postId = input.resolve() ?: return null
+        val post = service.post.get(postId) ?: return null
         return post.map()
     }
 
