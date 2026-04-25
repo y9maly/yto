@@ -106,7 +106,7 @@ actual class FileClient internal actual constructor(
                     requestTimeoutMillis = HttpTimeoutConfig.INFINITE_TIMEOUT_MS
                 }
 
-                header(HttpHeaders.ContentDisposition, ContentType.Application.OctetStream)
+                contentType(ContentType.Application.OctetStream)
                 setBody(channel)
             }
         }

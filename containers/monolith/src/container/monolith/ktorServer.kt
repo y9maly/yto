@@ -3,7 +3,9 @@ package container.monolith
 import backend.core.types.FileId
 import domain.service.result.CommitFilePartsResult
 import domain.service.result.UploadFilePartResult
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.ContentType
+import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
@@ -30,6 +32,8 @@ import presentation.gateway.ktorKrpc.krpcApiModule
 import java.io.File
 import kotlin.io.encoding.Base64
 
+
+private val ktorServerLogger = KotlinLogging.logger { }
 
 data class StartKtorServerConfig(
     val host: String,
@@ -70,12 +74,21 @@ fun Monolith.startKtorServer(
         krpcApiModule(rpc)
 
         if (config.cors != null) {
+            ktorServerLogger.debug { "Ktor server configured with CORS: ${config.cors}" }
+
             install(CORS) {
+                allowNonSimpleContentTypes = true
+
                 allowHeaders { true }
+                allowHeader(HttpHeaders.ContentType)
+                allowHeader(HttpHeaders.ContentDisposition)
+                allowHeader(HttpHeaders.Authorization)
+                allowHeader(HttpHeaders.Accept)
 
                 anyMethod()
 
                 if (config.cors.hosts == null) {
+                    ktorServerLogger.debug { "Ktor server configured with anyHost" }
                     anyHost()
                 } else {
                     config.cors.hosts.forEach { urlString ->
@@ -83,14 +96,19 @@ fun Monolith.startKtorServer(
                             error("Scheme in '$urlString' is required (http/https for example)")
                         val schema = urlString.substringBefore("://")
                         val host = urlString.substringAfter("://")
+                        ktorServerLogger.debug { "Ktor server configured with allowHost(host=$host, schema=$schema)" }
                         allowHost(host, schemes = listOf(schema))
                     }
                 }
             }
+        } else {
+            ktorServerLogger.debug { "Ktor server configured with no CORS" }
         }
 
         routing {
             config.staticFiles.forEach { staticFiles ->
+                ktorServerLogger.debug { "Ktor server configured with staticFiles(remotePath=${staticFiles.remotePath}, directory=${staticFiles.directory}, default=${staticFiles.default})" }
+
                 staticFiles(
                     remotePath = staticFiles.remotePath,
                     dir = File(staticFiles.directory),

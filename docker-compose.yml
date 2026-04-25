@@ -38,16 +38,22 @@ services:
     ports:
       - "8103:8103"
     environment:
+#      JAVA_TOOL_OPTIONS: "-Dlogback.configurationFile=/logback.xml"
       AUTH_SECRET: AWPe04G9E2
       KTOR_HOST: 0.0.0.0
       KTOR_PORT: 8103
-      KTOR_FILE_GATEWAY_ADDRESS: https://yto.y9maly.me:443
+      KTOR_FILE_GATEWAY_ADDRESS: https://yto.y9maly.me:443 # http://localhost:8080 for local development
       KAFKA_URL: yt-kafka:9092
       POSTGRES_URL: r2dbc:postgresql://postgres:qwerty@yt-postgres:5432/db
       REDIS_URL: redis://yt-redis:6379
       YTO_FILES_DIRECTORY: /files
-      CORS_HOST_STRATEGY: "[\"https://yto.y9maly.me\"]"
+      CORS: ENABLED # ENABLED / DISABLED
+      CORS_HOST_STRATEGY: "[\"https://yto.y9maly.me\"]" # Or "*" to allow any host. Used only if CORS=ENABLED.
       STATIC_FILES: "[{\"remote_path\": \"/\", \"directory\": \"/static\", \"default\": \"index.html\"}]"
+    volumes:
+      - /path/to/files:/files
+      - /path/to/static:/static
+#      - /path/to/logback.xml:/logback.xml
     depends_on:
       - yt-postgres
       - yt-redis

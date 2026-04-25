@@ -4,6 +4,9 @@ package container.monolith
 
 import container.monolith.StartKtorServerConfig.Cors
 import container.monolith.StartKtorServerConfig.StaticFiles
+import io.github.oshai.kotlinlogging.KotlinLogging
+import io.github.oshai.kotlinlogging.slf4j.internal.Slf4jLogger
+import io.netty.util.internal.logging.Slf4JLoggerFactory
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import kotlinx.serialization.ExperimentalSerializationApi
@@ -14,6 +17,7 @@ import kotlinx.serialization.json.JsonNames
 import kotlin.system.exitProcess
 
 
+private const val corsHelp = """Must be one of: ENABLED, DISABLED"""
 private const val corsHostStrategyHelp = """Must be a JSON array. For example: '["http://domain.zone", "https://subdomain.domain.zone"]' OR '*'. Use '*' to allow any host."""
 private const val staticFilesHelp = """Must be a JSON array. For example: '[{"remote_path": "/", "directory": "/files/staticContent", "default": "index.html"}]'. "default" key is optional."""
 
@@ -27,6 +31,7 @@ private class StaticFilesElement(
 )
 
 suspend fun main() {
+    val corsRaw = Env.require("CORS", corsHelp)
     val corsHostStrategyRaw = Env.require("CORS_HOST_STRATEGY", corsHostStrategyHelp)
     val staticFilesRaw = Env.orDefault("STATIC_FILES", "[]")
 
@@ -45,14 +50,20 @@ suspend fun main() {
         config = StartKtorServerConfig(
             host = MonolithDefaults.host,
             port = MonolithDefaults.port,
-            cors = Cors(
-                hosts = if (corsHostStrategyRaw == "*") {
-                    null // allow any host
-                } else {
-                    runCatching { Json.decodeFromString<List<String>>(corsHostStrategyRaw) }
-                        .getOrElse { error("Invalid CORS_HOST_STRATEGY environment variable. $corsHostStrategyHelp") }
-                }
-            ),
+            cors = when (corsRaw) {
+                "ENABLED" -> Cors(
+                    hosts = if (corsHostStrategyRaw == "*") {
+                        null // allow any host
+                    } else {
+                        runCatching { Json.decodeFromString<List<String>>(corsHostStrategyRaw) }
+                            .getOrElse { error("Invalid CORS_HOST_STRATEGY environment variable. $corsHostStrategyHelp") }
+                    }
+                )
+
+                "DISABLED" -> null
+
+                else -> error("Invalid CORS environment variable. $corsHelp")
+            },
             staticFiles = runCatching { Json.decodeFromString<List<StaticFilesElement>>(staticFilesRaw) }
                 .getOrElse { error("Invalid STATIC_FILES environment variable. $staticFilesHelp") }
                 .map { element ->
