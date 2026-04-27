@@ -7,7 +7,7 @@ import backend.core.types.SessionId
 import domain.event.AuthStateChanged
 import domain.event.SessionCreated
 import domain.service.result.LogInResult
-import domain.service.result.LogOutResult
+import domain.service.result.LogoutResult
 import domain.service.result.map
 import integration.eventCollector.EventCollector
 import integration.repository.RepositoryCollection
@@ -44,7 +44,7 @@ class AuthServiceImpl(
         return result.map()
     }
 
-    override suspend fun logOut(session: SessionId): LogOutResult {
+    override suspend fun logOut(session: SessionId): LogoutResult {
         val result = repo.auth.logOut(session)
 
         result

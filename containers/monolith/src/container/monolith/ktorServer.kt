@@ -1,6 +1,8 @@
 package container.monolith
 
 import backend.core.types.FileId
+import backend.core.types.SessionId
+import domain.service.CheckTelegramOIDCError
 import domain.service.result.CommitFilePartsResult
 import domain.service.result.UploadFilePartResult
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -9,6 +11,7 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
+import io.ktor.server.html.respondHtml
 import io.ktor.server.http.content.staticFiles
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
@@ -25,10 +28,16 @@ import io.ktor.utils.io.read
 import io.ktor.utils.io.write
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.html.DIV
+import kotlinx.html.body
+import kotlinx.html.div
+import kotlinx.html.span
 import kotlinx.io.Buffer
 import kotlinx.io.UnsafeIoApi
 import kotlinx.io.unsafe.UnsafeBufferOperations
 import presentation.gateway.ktorKrpc.krpcApiModule
+import y9to.libs.stdlib.Union
+import y9to.libs.stdlib.successOrElse
 import java.io.File
 import kotlin.io.encoding.Base64
 
@@ -114,6 +123,58 @@ fun Monolith.startKtorServer(
                     dir = File(staticFiles.directory),
                 ) {
                     default(staticFiles.default)
+                }
+            }
+
+            get("/login/telegramOIDC/{sessionId}") {
+                val sessionId = call.parameters["sessionId"]!!.toLong()
+
+                loginService.checkTelegramOIDC(
+                    session = SessionId(sessionId),
+                    authorizationCode = call.parameters["code"]!!,
+                    state = call.parameters["state"]!!,
+                ).successOrElse { error ->
+                    when (error) {
+                        CheckTelegramOIDCError.InvalidAuthorizationCode -> call.respondHtml {
+                            body {
+                                span {
+                                    +"Invalid code"
+                                }
+                            }
+                        }
+
+                        CheckTelegramOIDCError.InvalidSessionId -> call.respondHtml {
+                            body {
+                                span {
+                                    +"Unauthorized"
+                                }
+                            }
+                        }
+
+                        CheckTelegramOIDCError.LoginAttemptRejected -> call.respondHtml {
+                            body {
+                                span {
+                                    +"Forbidden"
+                                }
+                            }
+                        }
+
+                        CheckTelegramOIDCError.Unexpected -> call.respondHtml {
+                            body {
+                                span {
+                                    +"Unexpected"
+                                }
+                            }
+                        }
+                    }
+                }
+
+                call.respondHtml {
+                    body {
+                        span {
+                            +"Successfully logged in. Please return to the application"
+                        }
+                    }
                 }
             }
 

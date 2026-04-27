@@ -5,6 +5,7 @@ import y9to.api.types.AuthState
 import y9to.api.types.InputAuthMethod
 import y9to.api.types.LogInResult
 import y9to.api.types.LogOutResult
+import y9to.api.types.LoginState
 import y9to.api.types.RefreshToken
 import y9to.api.types.Session
 import y9to.api.types.Token
@@ -24,6 +25,7 @@ interface AuthRpc {
 
     suspend fun getSession(token: Token): Session
     suspend fun getAuthState(token: Token): AuthState
+    suspend fun getLoginState(token: Token): LoginState
     suspend fun logIn(token: Token, method: InputAuthMethod): LogInResult
     suspend fun logOut(token: Token): LogOutResult
 }

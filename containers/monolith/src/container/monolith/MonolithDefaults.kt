@@ -14,6 +14,7 @@ internal object MonolithDefaults {
     // r2dbc:postgresql://user:password@host:port/database
     val postgresUrl = System.getenv("POSTGRES_URL") ?: error("POSTGRES_URL environment variable is required")
     val fileGatewayAddress = System.getenv("KTOR_FILE_GATEWAY_ADDRESS") ?: "http://localhost:$port"
+    val oauthRedirectAddress = System.getenv("OAUTH_REDIRECT_ADDRESS") ?: "http://localhost:$port"
     // /home/user/server/files
     val filesDirectory = System.getenv("YTO_FILES_DIRECTORY") ?: error("YTO_FILES_DIRECTORY environment variable is required")
 }

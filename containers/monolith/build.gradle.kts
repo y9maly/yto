@@ -39,9 +39,12 @@ dependencies {
     implementation(project(":presentation:infrastructure:jwtManager-impl"))
     implementation(project(":presentation:workers:updatePublisher"))
     implementation(project(":backend:domain:service-impl"))
+    implementation(project(":backend:domain:authService-impl"))
+    implementation(project(":backend:integration:openidConnectTelegram-impl"))
     implementation(project(":backend:integration:eventCollector"))
     implementation(project(":backend:integration:eventCollector-kafka"))
     implementation(project(":backend:integration:selector-impl"))
+    implementation(project(":backend:integration:data:loginRepository-redis"))
     implementation(project(":backend:integration:data:repository-postgres"))
     implementation(project(":backend:integration:data:fileStorage-local"))
 
@@ -54,6 +57,7 @@ dependencies {
     implementation("io.nats:jnats:2.25.2")
 
     val ktorVersion = "3.4.2"
+    // ktor server
     implementation("io.ktor:ktor-server-core-jvm:$ktorVersion")
     implementation("io.ktor:ktor-server-websockets-jvm:$ktorVersion")
     implementation("io.ktor:ktor-network-tls-jvm:$ktorVersion")
@@ -65,6 +69,10 @@ dependencies {
     implementation("io.ktor:ktor-server-call-logging:$ktorVersion")
     implementation("io.ktor:ktor-server-cors:$ktorVersion")
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
+    implementation("io.ktor:ktor-server-html-builder:$ktorVersion")
+    // ktor client
+    implementation("io.ktor:ktor-client-core:$ktorVersion")
+    implementation("io.ktor:ktor-client-cio:$ktorVersion")
 
     val exposedVersion = "1.2.0"
     implementation("org.jetbrains.exposed:exposed-core:$exposedVersion")

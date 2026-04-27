@@ -30,6 +30,10 @@ class UserServiceImpl(
         return repo.user.exists(id)
     }
 
+    override suspend fun findByTelegramAuthId(telegramAuthId: String): User? {
+        return repo.user.getByTelegramAuthId(telegramAuthId)
+    }
+
     override suspend fun findByPhoneNumber(phoneNumber: String): User? {
         return repo.user.getByPhoneNumber(phoneNumber)
     }

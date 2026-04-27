@@ -42,10 +42,7 @@ import kotlin.time.Clock
 
 
 internal fun createRpc(
-    assembler: AssemblerCollection,
     authenticator: Authenticator,
-    updateProvider: UpdateProvider,
-    updateSubscriptionsStore: UpdateSubscriptionsStore,
     tokenProvider: TokenProvider,
     controller: ControllerCollection
 ): RpcCollection {
@@ -54,7 +51,7 @@ internal fun createRpc(
         user = UserRpcDefault(authenticator, controller.user),
         post = PostRpcDefault(authenticator, controller.post),
         file = FileRpcDefault(authenticator, controller.file),
-        update = UpdateRpcDefault(assembler, authenticator, updateProvider, updateSubscriptionsStore),
+        update = UpdateRpcDefault(authenticator, controller.update),
     )
 }
 
@@ -62,12 +59,15 @@ internal fun createController(
     fileGatewayAddress: String, //   https://example.com
     uploadFilePath: String,     //   file/upload
     downloadFilePath: String,   //   file/download
+    loginService: LoginService,
     service: ServiceCollection,
     assembler: AssemblerCollection,
     presenter: PresenterCollection,
+    updateProvider: UpdateProvider,
+    updateSubscriptionsStore: UpdateSubscriptionsStore,
 ): ControllerCollection {
     return ControllerCollection(
-        auth = AuthControllerDefault(service, assembler, presenter),
+        auth = AuthControllerDefault(loginService, service, assembler, presenter),
         user = UserControllerDefault(service, assembler, presenter),
         post = PostControllerDefault(service, assembler, presenter),
         file = FileControllerDefault(service, assembler, presenter,
@@ -86,6 +86,7 @@ internal fun createController(
                 FileSource.HttpOctetStream(url)
             }
         ),
+        update = UpdateControllerDefault(assembler, presenter, updateProvider, updateSubscriptionsStore)
     )
 }
 

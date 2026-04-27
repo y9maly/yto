@@ -100,6 +100,8 @@ include("backend") {
     "domain" {
         "service"()
         "service-impl"()
+        "authService"()
+        "authService-impl"()
         "workers"()
         "updatesCenter"()
     }
@@ -108,6 +110,8 @@ include("backend") {
         "data" {
             "repository"()
             "repository-postgres"()
+            "loginRepository"()
+            "loginRepository-redis"()
             "fileStorage"()
             "fileStorage-local"()
             "keyValueCache"()
@@ -115,6 +119,8 @@ include("backend") {
         }
         "eventCollector"()
         "eventCollector-kafka"()
+        "openidConnectTelegram"()
+        "openidConnectTelegram-impl"()
         "thirdpartyOnlineStatus"()
         "notificationService"()
         "notificationService-firebase"()

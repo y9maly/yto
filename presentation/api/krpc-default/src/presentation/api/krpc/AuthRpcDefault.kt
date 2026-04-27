@@ -38,6 +38,9 @@ class AuthRpcDefault(
     override suspend fun getAuthState(token: Token) =
         authenticate(token) { getAuthState() }
 
+    override suspend fun getLoginState(token: Token) =
+        authenticate(token) { getLoginState() }
+
     override suspend fun logIn(token: Token, method: InputAuthMethod) =
         authenticate(token) { logIn(method) }
 

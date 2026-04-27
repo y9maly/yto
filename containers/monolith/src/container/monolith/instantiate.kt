@@ -2,7 +2,15 @@
 
 package container.monolith
 
+import domain.service.LoginServiceImpl
 import integration.eventCollector.KafkaEventCollector
+import integration.loginRepository.LoginRepositoryRedis
+import integration.telegramOpenidConnect.TelegramAuthorizationCodeApplierKtor
+import integration.telegramOpenidConnect.TelegramOpenidConnectImpl
+import integration.telegramOpenidConnect.TelegramPublicKeyCacheRedis
+import integration.telegramOpenidConnect.TelegramPublicKeyProviderKtor
+import io.ktor.client.HttpClient
+import io.ktor.client.engine.cio.CIO
 import io.lettuce.core.ExperimentalLettuceCoroutinesApi
 import io.lettuce.core.api.coroutines
 import kotlinx.coroutines.Dispatchers
@@ -35,6 +43,7 @@ suspend fun instantiate(
     kafkaUrl: String = MonolithDefaults.kafkaUrl,
     postgresUrl: String = MonolithDefaults.postgresUrl,
     fileGatewayAddress: String = MonolithDefaults.fileGatewayAddress,
+    oauthRedirectAddress: String = MonolithDefaults.oauthRedirectAddress,
     filesDirectory: String = MonolithDefaults.filesDirectory,
 ): Monolith {
     // backend/infrastructure
@@ -43,6 +52,8 @@ suspend fun instantiate(
     val redisClient = createRedisClient(url = redisUrl)
     val repository = createRepository(database = database)
     val fileStorage = createFileStorage(filesDirectory)
+
+    val httpClient = HttpClient(CIO)
 
     // backend/domain
 
@@ -61,6 +72,36 @@ suspend fun instantiate(
         ),
         clock = Clock.System,
         fileStorage = fileStorage,
+    )
+
+    val loginService = LoginServiceImpl(
+        authService = service.auth,
+        userService = service.user,
+        telegramOpenidConnect = TelegramOpenidConnectImpl(
+            publicKeyProvider = TelegramPublicKeyProviderKtor(
+                cache = TelegramPublicKeyCacheRedis(
+                    ttl = 5.minutes,
+                    commands = redisClient.connect().coroutines()
+                ),
+                wellKnownJWKSUrl = { "https://oauth.telegram.org/.well-known/jwks.json" },
+                httpClient = { httpClient },
+            ),
+            authorizationCodeApplier = TelegramAuthorizationCodeApplierKtor(
+                clientId = "0",
+                clientSecret = "0",
+                telegramTokenUrl = { "https://oauth.telegram.org/token" },
+                httpClient = { httpClient },
+            ),
+            clientId = "0",
+            botId = "0",
+            telegramIssuer = "https://oauth.telegram.org",
+        ),
+        loginRepository = LoginRepositoryRedis(redisClient.connect().coroutines()),
+        loginStepTTL = 5.minutes,
+        confirmCodeLength = { listOf(4, 6).random() },
+        redirectUri = { sessionId ->
+            "https://yto.y9maly.me/login/telegramOIDC/${sessionId.long}"
+        },
     )
 
     // presentation/infrastructure
@@ -100,8 +141,11 @@ suspend fun instantiate(
         uploadFilePath = "file/upload",
         downloadFilePath = "file/download",
         service = service,
+        loginService = loginService,
         assembler = assembler,
         presenter = presenter,
+        updateProvider = UpdateProviderDefault(updateManager),
+        updateSubscriptionsStore = updateSubscriptionsStore,
     )
 
     // Gateway
@@ -110,10 +154,7 @@ suspend fun instantiate(
     val tokenProvider = JwtTokenProvider(jwtManager = jwtManager)
 
     val rpc = createRpc(
-        assembler = assembler,
         authenticator = authenticator,
-        updateProvider = UpdateProviderDefault(updateManager),
-        updateSubscriptionsStore = updateSubscriptionsStore,
         tokenProvider = tokenProvider,
         controller = controller,
     )
@@ -123,6 +164,7 @@ suspend fun instantiate(
         repository = repository,
         fileStorage = fileStorage,
         service = service,
+        loginService = loginService,
         presenter = presenter,
         assembler = assembler,
         controller = controller,

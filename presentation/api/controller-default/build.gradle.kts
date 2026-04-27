@@ -14,9 +14,12 @@ kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-sensitive-resolution")
 
 dependencies {
     api(project(":backend:domain:service"))
+    api(project(":backend:domain:authService"))
     api(project(":presentation:api:controller"))
     api(project(":presentation:integration:assembler"))
     api(project(":presentation:integration:presenter"))
+    api(project(":presentation:integration:updateSubscriptionsStore"))
+    api(project(":presentation:integration:updateProvider"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")

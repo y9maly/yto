@@ -14,12 +14,8 @@ kotlin.compilerOptions.freeCompilerArgs.add("-Xcontext-parameters")
 dependencies {
     api(project(":presentation:api:controller"))
     api(project(":presentation:api:krpc"))
-    api(project(":presentation:integration:assembler"))
-    api(project(":presentation:integration:presenter"))
     api(project(":presentation:integration:authenticator"))
     api(project(":presentation:integration:tokenProvider"))
-    api(project(":presentation:integration:updateSubscriptionsStore"))
-    api(project(":presentation:integration:updateProvider"))
 
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-core:1.10.0")

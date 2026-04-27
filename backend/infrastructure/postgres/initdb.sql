@@ -745,6 +745,8 @@ CREATE TABLE public.users (
                               last_name character varying(64),
                               registration_date timestamp without time zone DEFAULT CURRENT_TIMESTAMP NOT NULL,
                               phone_number character varying(32),
+                              telegram_auth_id varchar(255) default null,
+                              telegram_user_id bigint default null,
                               email character varying(128),
                               password_plaintext character varying(256),
                               bio character varying(1024),

@@ -1,6 +1,10 @@
 package y9to.api.controller
 
+import domain.service.LoginService
 import domain.service.ServiceCollection
+import domain.service.StartWithEmailError
+import domain.service.StartWithPhoneNumberError
+import domain.service.StartWithTelegramOIDCError
 import presentation.assembler.AssemblerCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.sessionId
@@ -10,11 +14,11 @@ import y9to.api.types.*
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
 import y9to.libs.stdlib.successOrElse
-import domain.service.result.LogInError as DomainLogInError
 import domain.service.result.LogOutError as DomainLogOutError
 
 
 class AuthControllerDefault(
+    val loginService: LoginService,
     private val service: ServiceCollection,
     override val assembler: AssemblerCollection,
     override val presenter: PresenterCollection,
@@ -39,20 +43,43 @@ class AuthControllerDefault(
     }
 
     context(_: Context)
-    override suspend fun logIn(method: InputAuthMethod): LogInResult = context {
-        val user = when (method) {
-            is InputAuthMethod.PhoneNumber -> service.user.findByPhoneNumber(method.phoneNumber)
-            is InputAuthMethod.Email -> service.user.findByEmail(method.email)
-        } ?: return LogInError.UserForSpecifiedAuthMethodNotFound.asError()
+    override suspend fun getLoginState(): LoginState = context {
+        val loginState = loginService.getLoginState(sessionId)
+        return loginState.map()
+    }
 
-        service.auth.logIn(sessionId, user.id)
-            .successOrElse { error ->
-                return when (error) {
-                    DomainLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
-                    DomainLogInError.InvalidSessionId -> error("Invalid token")
-                    DomainLogInError.InvalidClientId -> LogInError.UserForSpecifiedAuthMethodNotFound
-                }.asError()
-            }
+    context(_: Context)
+    override suspend fun logIn(method: InputAuthMethod): LogInResult = context {
+        when (method) {
+            is InputAuthMethod.PhoneNumber ->
+                loginService.startWithPhoneNumber(sessionId, method.phoneNumber)
+                    .successOrElse { error ->
+                        return when (error) {
+                            StartWithPhoneNumberError.AlreadyLogInned -> LogInError.AlreadyLogInned
+                            StartWithPhoneNumberError.InvalidPhoneNumber -> LogInError.UserForSpecifiedAuthMethodNotFound
+                            StartWithPhoneNumberError.InvalidSessionId -> error("Invalid token")
+                        }.asError()
+                    }
+
+            is InputAuthMethod.Email ->
+                loginService.startWithEmail(sessionId, method.email)
+                    .successOrElse { error ->
+                        return when (error) {
+                            StartWithEmailError.AlreadyLogInned -> LogInError.AlreadyLogInned
+                            StartWithEmailError.InvalidEmail -> LogInError.UserForSpecifiedAuthMethodNotFound
+                            StartWithEmailError.InvalidSessionId -> error("Invalid token")
+                        }.asError()
+                    }
+
+            is InputAuthMethod.Telegram ->
+                loginService.startWithTelegramOIDC(sessionId, method.requestPhoneNumber)
+                    .successOrElse { error ->
+                        return when (error) {
+                            StartWithTelegramOIDCError.AlreadyLogInned -> LogInError.AlreadyLogInned
+                            StartWithTelegramOIDCError.InvalidSessionId -> error("Invalid token")
+                        }.asError()
+                    }
+        }
 
         return LogInOk.asOk()
     }

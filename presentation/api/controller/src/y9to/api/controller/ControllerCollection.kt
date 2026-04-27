@@ -6,4 +6,5 @@ class ControllerCollection(
     val user: UserController,
     val post: PostController,
     val file: FileController,
+    val update: UpdateController,
 )

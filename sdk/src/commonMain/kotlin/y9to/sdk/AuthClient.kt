@@ -5,15 +5,18 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.channelFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.shareIn
 import kotlinx.coroutines.launch
 import y9to.api.types.AuthState
 import y9to.api.types.InputAuthMethod
 import y9to.api.types.LogInResult
 import y9to.api.types.LogOutResult
+import y9to.api.types.LoginState
 import y9to.api.types.RefreshToken
 import y9to.api.types.Session
 import y9to.api.types.Token
@@ -42,6 +45,24 @@ class AuthClient internal constructor(
 
         client.updateCenter.updates.filterIsInstance<Update.AuthStateChanged>().collect {
             send(it.authState)
+        }
+    }
+        .distinctUntilChanged()
+        .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
+
+    val loginState: Flow<LoginState> = channelFlow {
+        val isAuthorizedFlow = authState.map { it is AuthState.Authorized }
+
+        isAuthorizedFlow.collectLatest { isAuthorized ->
+            if (isAuthorized) {
+                send(LoginState.None)
+                return@collectLatest
+            }
+
+            while (true) {
+                send(request { rpc.auth.getLoginState(token) })
+                delay(1000.milliseconds)
+            }
         }
     }
         .distinctUntilChanged()

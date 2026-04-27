@@ -12,6 +12,7 @@ interface UserService {
     suspend fun get(id: UserId): User?
     suspend fun exists(id: UserId): Boolean
 
+    suspend fun findByTelegramAuthId(telegramAuthId: String): User?
     suspend fun findByPhoneNumber(phoneNumber: String): User?
     suspend fun findByEmail(email: String): User?
 

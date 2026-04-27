@@ -3,12 +3,8 @@ package domain.service.result
 import y9to.libs.stdlib.Union
 
 
-typealias LogInResult = Union<LogInOk, LogInError>
-typealias LogOutResult = Union<LogOutOk, LogOutError>
-
-
-typealias LogInOk = Unit
-typealias LogOutOk = Unit
+typealias LogInResult = Union<Unit, LogInError>
+typealias LogoutResult = Union<Unit, LogOutError>
 
 
 sealed interface LogInError {

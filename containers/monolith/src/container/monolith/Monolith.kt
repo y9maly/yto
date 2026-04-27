@@ -1,5 +1,6 @@
 package container.monolith
 
+import domain.service.LoginService
 import domain.service.ServiceCollection
 import integration.fileStorage.FileStorage
 import integration.repository.RepositoryCollection
@@ -19,6 +20,7 @@ data class Monolith(
     val repository: RepositoryCollection,
     val fileStorage: FileStorage,
     val service: ServiceCollection,
+    val loginService: LoginService,
     val presenter: PresenterCollection,
     val assembler: AssemblerCollection,
     val controller: ControllerCollection,

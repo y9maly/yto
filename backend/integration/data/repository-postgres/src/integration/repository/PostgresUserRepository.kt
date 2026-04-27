@@ -41,6 +41,10 @@ internal class PostgresUserRepository(private val main: MainRepository) : UserRe
         return selectByPredicate { TUser.id eq id.long }
     }
 
+    override suspend fun getByTelegramAuthId(telegramAuthId: String): User? {
+        return selectByPredicate { TUser.telegram_auth_id eq telegramAuthId }
+    }
+
     override suspend fun getByPhoneNumber(phoneNumber: String): User? {
         return selectByPredicate { TUser.phone_number eq phoneNumber }
     }

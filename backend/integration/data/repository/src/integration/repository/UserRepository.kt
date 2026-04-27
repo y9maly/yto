@@ -20,6 +20,7 @@ interface UserRepository {
     suspend fun get(id: UserId): User?
     suspend fun exists(id: UserId): Boolean
 
+    suspend fun getByTelegramAuthId(telegramAuthId: String): User?
     suspend fun getByPhoneNumber(phoneNumber: String): User?
     suspend fun getByEmail(email: String): User?
 
