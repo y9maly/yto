@@ -2,13 +2,19 @@ package container.monolith
 
 import backend.core.types.FileId
 import backend.core.types.SessionId
-import domain.service.CheckTelegramOIDCError
+import domain.service.CheckOAuthError
+import domain.service.ContinueLoginError
 import domain.service.result.CommitFilePartsResult
 import domain.service.result.UploadFilePartResult
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
+import io.ktor.http.HttpStatusCode.Companion.BadRequest
+import io.ktor.http.HttpStatusCode.Companion.Forbidden
+import io.ktor.http.HttpStatusCode.Companion.NotFound
+import io.ktor.http.HttpStatusCode.Companion.OK
+import io.ktor.http.HttpStatusCode.Companion.Unauthorized
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtml
@@ -28,15 +34,14 @@ import io.ktor.utils.io.read
 import io.ktor.utils.io.write
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
-import kotlinx.html.DIV
 import kotlinx.html.body
-import kotlinx.html.div
+import kotlinx.html.head
 import kotlinx.html.span
+import kotlinx.html.title
 import kotlinx.io.Buffer
 import kotlinx.io.UnsafeIoApi
 import kotlinx.io.unsafe.UnsafeBufferOperations
 import presentation.gateway.ktorKrpc.krpcApiModule
-import y9to.libs.stdlib.Union
 import y9to.libs.stdlib.successOrElse
 import java.io.File
 import kotlin.io.encoding.Base64
@@ -126,24 +131,38 @@ fun Monolith.startKtorServer(
                 }
             }
 
-            get("/login/telegramOIDC/{sessionId}") {
+            get("/login/telegramOAuth/{sessionId}") {
                 val sessionId = call.parameters["sessionId"]!!.toLong()
 
-                loginService.checkTelegramOIDC(
+                loginService.checkOAuth(
                     session = SessionId(sessionId),
                     authorizationCode = call.parameters["code"]!!,
-                    state = call.parameters["state"]!!,
+                    authorizationState = call.parameters["state"]!!,
                 ).successOrElse { error ->
                     when (error) {
-                        CheckTelegramOIDCError.InvalidAuthorizationCode -> call.respondHtml {
+                        CheckOAuthError.InvalidAuthorizationCode -> call.respondHtml(BadRequest) {
+                            head { title { +"Login with Telegram Error" } }
+
                             body {
                                 span {
-                                    +"Invalid code"
+                                    +"Invalid link. Provided code is invalid"
                                 }
                             }
                         }
 
-                        CheckTelegramOIDCError.InvalidSessionId -> call.respondHtml {
+                        CheckOAuthError.InvalidAuthorizationState -> call.respondHtml(BadRequest) {
+                            head { title { +"Login with Telegram Error" } }
+
+                            body {
+                                span {
+                                    +"Invalid link. Provided state is invalid"
+                                }
+                            }
+                        }
+
+                        ContinueLoginError.InvalidSessionId -> call.respondHtml(Unauthorized) {
+                            head { title { +"Login with Telegram Error" } }
+
                             body {
                                 span {
                                     +"Unauthorized"
@@ -151,15 +170,19 @@ fun Monolith.startKtorServer(
                             }
                         }
 
-                        CheckTelegramOIDCError.LoginAttemptRejected -> call.respondHtml {
+                        ContinueLoginError.LoginAttemptRejected -> call.respondHtml(Forbidden) {
+                            head { title { +"Login with Telegram Error" } }
+
                             body {
                                 span {
-                                    +"Forbidden"
+                                    +"Login attempt rejected"
                                 }
                             }
                         }
 
-                        CheckTelegramOIDCError.Unexpected -> call.respondHtml {
+                        ContinueLoginError.Unexpected -> call.respondHtml(NotFound) {
+                            head { title { +"Login with Telegram Error" } }
+
                             body {
                                 span {
                                     +"Unexpected"
@@ -167,9 +190,13 @@ fun Monolith.startKtorServer(
                             }
                         }
                     }
+
+                    return@get
                 }
 
-                call.respondHtml {
+                call.respondHtml(OK) {
+                    head { title { +"Login with Telegram Success" } }
+
                     body {
                         span {
                             +"Successfully logged in. Please return to the application"
@@ -180,7 +207,7 @@ fun Monolith.startKtorServer(
 
             post("file/upload/{uri}") {
                 val uriBase64 = call.parameters["uri"]
-                    ?: return@post call.respond(HttpStatusCode.BadRequest)
+                    ?: return@post call.respond(BadRequest)
                 val uri = Base64.UrlSafe.decode(uriBase64.replace("_", "="))
                     .toString(Charsets.UTF_8)
 
@@ -195,7 +222,7 @@ fun Monolith.startKtorServer(
                         when (service.file.uploadPart(uri, buffer)) {
                             is UploadFilePartResult.Ok -> {}
                             is UploadFilePartResult.InvalidURI -> {
-                                call.respond(HttpStatusCode.NotFound)
+                                call.respond(NotFound)
                                 error("Abort")
                             }
                             is UploadFilePartResult.OwnerStorageQuotaExceeded -> {
@@ -214,12 +241,12 @@ fun Monolith.startKtorServer(
                     is CommitFilePartsResult.Ok -> result.file
 
                     is CommitFilePartsResult.InvalidFileOwner -> {
-                        call.respond(HttpStatusCode.Unauthorized)
+                        call.respond(Unauthorized)
                         error("Abort")
                     }
 
                     is CommitFilePartsResult.InvalidURI -> {
-                        call.respond(HttpStatusCode.NotFound)
+                        call.respond(NotFound)
                         error("Abort")
                     }
 
@@ -229,22 +256,22 @@ fun Monolith.startKtorServer(
                     }
                 }
 
-                call.respond(HttpStatusCode.OK, """{"fileId":${file.id.long}}""")
+                call.respond(OK, """{"fileId":${file.id.long}}""")
             }
 
             get("file/download/{idOrUri}") {
                 val idOrUriBase64 = call.parameters["idOrUri"]
-                    ?: return@get call.respond(HttpStatusCode.BadRequest)
+                    ?: return@get call.respond(BadRequest)
 
                 val source = if (idOrUriBase64.toLongOrNull() != null) {
                     val id = FileId(idOrUriBase64.toLong())
                     service.file.download(id)
-                        ?: return@get call.respond(HttpStatusCode.NotFound)
+                        ?: return@get call.respond(NotFound)
                 } else {
                     val uri = Base64.UrlSafe.decode(idOrUriBase64.replace("_", "="))
                         .toString(Charsets.UTF_8)
                     service.file.download(uri)
-                        ?: return@get call.respond(HttpStatusCode.NotFound)
+                        ?: return@get call.respond(NotFound)
                 }
 
                 call.respondBytesWriter(ContentType.Application.OctetStream) {

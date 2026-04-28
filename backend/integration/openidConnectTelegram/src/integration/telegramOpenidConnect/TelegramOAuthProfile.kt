@@ -3,7 +3,7 @@ package integration.telegramOpenidConnect
 import y9to.libs.stdlib.optional.Optional
 
 
-data class TelegramOIDCProfile(
+data class TelegramOAuthProfile(
     /**
      * "subject" (or "sub"). see https://core.telegram.org/bots/telegram-login#user-data-structure
      */

@@ -4,11 +4,17 @@ import backend.core.types.User
 import y9to.libs.stdlib.Union
 
 
+typealias RegisterUserResult = Union<User, RegisterUserError>
 typealias EditUserResult = Union<EditUserOk, EditUserError>
 
 
 data class EditUserOk(val new: User)
 
+
+sealed interface RegisterUserError {
+    data object PhoneNumberConflict : RegisterUserError
+    data object EmailConflict : RegisterUserError
+}
 
 sealed interface EditUserError {
     data object InvalidUserId : EditUserError

@@ -3,6 +3,7 @@ package integration.telegramOpenidConnect
 import backend.core.types.SessionId
 import io.ktor.client.*
 import io.ktor.client.request.*
+import io.ktor.client.request.forms.FormDataContent
 import io.ktor.client.statement.*
 import io.ktor.http.*
 import kotlinx.serialization.json.Json
@@ -28,11 +29,13 @@ class TelegramAuthorizationCodeApplierKtor(
         val response = httpClient().post(telegramTokenUrl) {
             header(HttpHeaders.ContentType, ContentType.Application.FormUrlEncoded)
             header(HttpHeaders.Authorization, authorizationHeader)
-            parameter("grant_type", "authorization_code")
-            parameter("code", authorizationCode)
-            parameter("redirect_uri", redirectUri)
-            parameter("client_id", clientId)
-            parameter("code_verifier", codeVerifier)
+            setBody(FormDataContent(Parameters.build {
+                append("grant_type", "authorization_code")
+                append("code", authorizationCode)
+                append("redirect_uri", redirectUri)
+                append("client_id", clientId)
+                append("code_verifier", codeVerifier)
+            }))
         }.bodyAsText()
 
         runCatching {

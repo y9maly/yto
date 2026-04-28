@@ -6,6 +6,8 @@ import backend.core.types.UserId
 import backend.core.types.UserRef
 import backend.infra.postgres.table.TUser
 import integration.repository.internals.FirstRevision
+import integration.repository.result.CreateUserError
+import integration.repository.result.CreateUserResult
 import integration.repository.result.EditUserError
 import integration.repository.result.EditUserOk
 import integration.repository.result.EditUserResult
@@ -73,40 +75,48 @@ internal class PostgresUserRepository(private val main: MainRepository) : UserRe
 
     override suspend fun create(
         registrationDate: Instant,
-        phoneNumber: Optional<String?>,
-        email: Optional<String?>,
+        telegramAuthId: String?,
+        phoneNumber: String?,
+        email: String?,
         firstName: String,
-        lastName: Optional<String?>,
-        bio: Optional<String?>,
-        birthday: Optional<Birthday?>,
-        cover: Optional<FileId?>,
-        avatar: Optional<FileId?>,
-    ): User = main.transaction {
+        lastName: String?,
+        bio: String?,
+        birthday: Birthday?,
+        cover: FileId?,
+        avatar: FileId?,
+    ): CreateUserResult = main.transaction {
+        if (phoneNumber != null && getByPhoneNumber(phoneNumber) != null)
+            return@transaction CreateUserError.PhoneNumberConflict.asError()
+
+        if (email != null && getByEmail(email) != null)
+            return@transaction CreateUserError.EmailConflict.asError()
+
         val userId = TUser.insertAndGetId { row ->
             row[this.registration_date] = registrationDate
-            row[this.phone_number] = phoneNumber.getOrNull()
-            row[this.email] = email.getOrNull()
+            row[this.telegram_auth_id] = telegramAuthId
+            row[this.phone_number] = phoneNumber
+            row[this.email] = email
             row[this.first_name] = firstName
-            row[this.last_name] = lastName.getOrNull()
-            row[this.bio] = bio.getOrNull()
-            row[this.birthday] = birthday.getOrNull()
-            row[this.cover] = cover.getOrNull()?.long
-            row[this.avatar] = avatar.getOrNull()?.long
+            row[this.last_name] = lastName
+            row[this.bio] = bio
+            row[this.birthday] = birthday
+            row[this.cover] = cover?.long
+            row[this.avatar] = avatar?.long
         }.value
 
         User(
             id = UserId(userId),
             revision = FirstRevision,
             registrationDate = registrationDate,
-            phoneNumber = phoneNumber.getOrNull(),
-            email = email.getOrNull(),
+            phoneNumber = phoneNumber,
+            email = email,
             firstName = firstName,
-            lastName = lastName.getOrNull(),
-            bio = bio.getOrNull(),
-            birthday = birthday.getOrNull(),
-            cover = cover.getOrNull(),
-            avatar = avatar.getOrNull(),
-        )
+            lastName = lastName,
+            bio = bio,
+            birthday = birthday,
+            cover = cover,
+            avatar = avatar,
+        ).asOk()
     }
 
     /**

@@ -11,6 +11,5 @@ interface AuthEndpoint {
 
     fun getSession(): Session
     fun getAuthState(): AuthState
-    fun logIn(method: InputAuthMethod): LogInResult
     fun logOut(): LogOutResult
 }

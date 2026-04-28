@@ -10,7 +10,7 @@ import integration.repository.result.LogOutResult as DbLogOutResult
 @JvmName("mapLogInResult")
 internal fun DbLogInResult.map() = mapError { map() }
 internal fun DbLogInError.map(): LogInError = when (this) {
-    DbLogInError.AlreadyLogInned -> LogInError.AlreadyLogInned
+    DbLogInError.AlreadyAuthenticated -> LogInError.AlreadyAuthenticated
     DbLogInError.InvalidClientId -> LogInError.InvalidClientId
     DbLogInError.InvalidSessionId -> LogInError.InvalidSessionId
 }

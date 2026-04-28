@@ -1,14 +1,23 @@
 package domain.service
 
+import backend.core.types.ConfirmCodeDestination
 import backend.core.types.FileId
+import backend.core.types.LinkEmailInfo
+import backend.core.types.LinkPhoneNumberInfo
+import backend.core.types.LoginCapabilities
+import backend.core.types.LoginMethod
 import backend.core.types.LoginState
+import backend.core.types.OAuthSessionInfo
+import backend.core.types.PreFilledRegistrationField
+import backend.core.types.PreFilledRegistrationFieldSource
+import backend.core.types.PreFilledRegistrationFields
 import backend.core.types.SessionId
 import domain.service.InternalLoginState.ConfirmCodeResult
-import domain.service.InternalLoginState.ConfirmCodeSource
 import domain.service.InternalLoginState.InitiatedWith
 import domain.service.InternalLoginState.Step
-import domain.service.InternalLoginState.TelegramOIDCResult
+import domain.service.InternalLoginState.TelegramOAuthResult
 import domain.service.result.LogInError
+import domain.service.result.RegisterUserError
 import integration.loginRepository.LoginRepository
 import integration.telegramOpenidConnect.TelegramOpenidConnect
 import integration.telegramOpenidConnect.ValidateTelegramOpenidConnectResult
@@ -16,10 +25,9 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
-import y9to.libs.stdlib.optional.fold
 import y9to.libs.stdlib.optional.getOrElse
+import y9to.libs.stdlib.optional.map
 import y9to.libs.stdlib.optional.none
-import y9to.libs.stdlib.optional.presentIfNotNull
 import y9to.libs.stdlib.successOrElse
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -35,59 +43,112 @@ class LoginServiceImpl(
     private val loginStepTTL: Duration, // = 5.minutes
     private val confirmCodeLength: () -> Int, // = { listOf(4, 6).random() }
     private val redirectUri: (SessionId) -> String,
+    private val requiredToLinkPhoneNumberWhileTelegramOAuthRegistration: Boolean,
+    private val debugLoginCodes: Set<String>,
 ) : LoginService {
-    override suspend fun getLoginState(session: SessionId): LoginState {
+    override suspend fun getLoginCapabilities(session: SessionId): LoginCapabilities {
+        return LoginCapabilities(
+            availableLoginMethods = setOf(
+                LoginMethod.Phone,
+                LoginMethod.Email,
+                LoginMethod.TelegramOAuth,
+            ),
+            requiredToLinkPhoneNumberWhileTelegramOAuthRegistration = requiredToLinkPhoneNumberWhileTelegramOAuthRegistration,
+        )
+    }
+
+    override suspend fun getLoginState(session: SessionId): LoginState? {
         val internalState = loginRepository.getLoginState(session)
-            ?: return LoginState.None
+            ?: return null
 
         return when (val step = internalState.currentStep) {
-            is Step.ConfirmCode -> LoginState.WaitConfirmCode(
-                digitOnly = step.code.all { it.isDigit() },
+            is Step.ConfirmCode -> LoginState.ConfirmCode(
+                digitsOnly = step.code.all { it.isDigit() },
                 length = step.code.length,
+                destination = step.destination,
             )
 
-            is Step.ConfirmPassword -> LoginState.WaitPassword(
+            is Step.Password2FA -> LoginState.Password2FA(
                 hint = null,
             )
 
-            is Step.Registration.Default -> LoginState.WaitRegistration.WaitRegistrationDefault
+            is Step.Registration.Default -> LoginState.Registration(
+                preFilledRegistrationFields = PreFilledRegistrationFields(),
+                linkPhoneNumberInfo = when (val initiatedWith = internalState.initiatedWith) {
+                    is InitiatedWith.PhoneNumber -> LinkPhoneNumberInfo.Mandatory(initiatedWith.phoneNumber)
+                    is InitiatedWith.TelegramOAuth,
+                    is InitiatedWith.Email -> LinkPhoneNumberInfo.None
+                },
+                linkEmailInfo = when (val initiatedWith = internalState.initiatedWith) {
+                    is InitiatedWith.Email -> LinkEmailInfo.Mandatory(initiatedWith.email)
+                    is InitiatedWith.TelegramOAuth,
+                    is InitiatedWith.PhoneNumber -> LinkEmailInfo.None
+                },
+            )
 
-            is Step.Registration.ViaTelegram -> {
-                val canUseTelegramPhoneNumber = step.telegramPhoneNumber.fold(
-                    onNone = { false },
-                    onPresent = { telegramPhoneNumber ->
-                        val user = userService.findByPhoneNumber(telegramPhoneNumber)
-                        val telegramPhoneNumberAvailable = user == null
-                        telegramPhoneNumberAvailable
-                    }
+            is Step.Registration.UsingTelegramOAuthProfileInfo -> {
+                val preFilledRegistrationFields = PreFilledRegistrationFields(
+                    firstName = step.telegramFirstName
+                        .map { PreFilledRegistrationField(it, PreFilledRegistrationFieldSource.Telegram) }
+                        .getOrNull(),
+                    lastName = step.telegramLastName
+                        .map { PreFilledRegistrationField(it, PreFilledRegistrationFieldSource.Telegram) }
+                        .getOrNull(),
+                    avatar = step.telegramAvatar
+                        .map { PreFilledRegistrationField(it, PreFilledRegistrationFieldSource.Telegram) }
+                        .getOrNull(),
                 )
 
-                LoginState.WaitRegistration.WaitRegistrationViaTelegram(
-                    telegramFirstName = step.telegramFirstName,
-                    telegramLastName = step.telegramLastName,
-                    telegramAvatar = step.telegramAvatar,
-                    telegramPhoneNumber = step.telegramPhoneNumber,
-                    canUseTelegramPhoneNumber = canUseTelegramPhoneNumber,
+                val linkPhoneNumberInfo =
+                    if (step.telegramPhoneNumber.isPresent) {
+                        val canUseTelegramPhoneNumber = run {
+                            val user = userService.findByPhoneNumber(step.telegramPhoneNumber.getOrThrow())
+                            val telegramPhoneNumberAvailable = user == null
+                            telegramPhoneNumberAvailable
+                        }
+
+                        if (canUseTelegramPhoneNumber) {
+                            if (requiredToLinkPhoneNumberWhileTelegramOAuthRegistration) {
+                                LinkPhoneNumberInfo.Mandatory(step.telegramPhoneNumber.getOrThrow())
+                            } else {
+                                LinkPhoneNumberInfo.Optional(step.telegramPhoneNumber.getOrThrow())
+                            }
+                        } else {
+                            LinkPhoneNumberInfo.Restricted(
+                                step.telegramPhoneNumber.getOrThrow(),
+                                LinkPhoneNumberInfo.RestrictedReason.OtherUserThisThisPhoneNumberExists,
+                            )
+                        }
+                    } else {
+                        LinkPhoneNumberInfo.None
+                    }
+
+                val linkEmailInfo = LinkEmailInfo.None
+
+                LoginState.Registration(
+                    preFilledRegistrationFields = preFilledRegistrationFields,
+                    linkPhoneNumberInfo = linkPhoneNumberInfo,
+                    linkEmailInfo = linkEmailInfo,
                 )
             }
 
-            is Step.TelegramOIDC -> LoginState.TelegramOIDC(
+            is Step.TelegramOAuth -> LoginState.OAuthInProgress(
+                sessionInfo = OAuthSessionInfo.Telegram(
+                    isPhoneNumberWasRequested = step.isPhoneNumberWasRequested,
+                ),
                 authorizationUri = step.authorizationUri,
             )
         }
     }
 
     override suspend fun startWithPhoneNumber(session: SessionId, phoneNumber: String): StartWithPhoneNumberResult {
-        val user = userService.findByPhoneNumber(phoneNumber)
-            ?: return StartWithPhoneNumberError.InvalidPhoneNumber.asError()
-
         loginRepository.saveLoginState(
             session = session,
             state = InternalLoginState(
                 initiatedWith = InitiatedWith.PhoneNumber(phoneNumber),
                 previousSteps = emptyList(),
                 currentStep = Step.ConfirmCode(
-                    source = ConfirmCodeSource.PhoneNumber(phoneNumber),
+                    destination = ConfirmCodeDestination.Phone(phoneNumber),
                     code = generateConfirmCode(confirmCodeLength()),
                 )
             ),
@@ -98,16 +159,13 @@ class LoginServiceImpl(
     }
 
     override suspend fun startWithEmail(session: SessionId, email: String): StartWithEmailResult {
-        val user = userService.findByEmail(email)
-            ?: return StartWithEmailError.InvalidEmail.asError()
-
         loginRepository.saveLoginState(
             session = session,
             state = InternalLoginState(
                 initiatedWith = InitiatedWith.Email(email),
                 previousSteps = emptyList(),
                 currentStep = Step.ConfirmCode(
-                    source = ConfirmCodeSource.Email(email),
+                    destination = ConfirmCodeDestination.Email(email),
                     code = generateConfirmCode(confirmCodeLength()),
                 )
             ),
@@ -117,7 +175,7 @@ class LoginServiceImpl(
         return Unit.asOk()
     }
 
-    override suspend fun startWithTelegramOIDC(session: SessionId, requestPhoneNumber: Boolean): StartWithTelegramOIDCResult {
+    override suspend fun startWithTelegramOAuth(session: SessionId, requestPhoneNumber: Boolean): StartWithTelegramOAuthResult {
         val result = telegramOpenidConnect.initiate(
             redirectUri = redirectUri(session),
             requestProfile = true,
@@ -126,9 +184,10 @@ class LoginServiceImpl(
         )
 
         val newState = InternalLoginState(
-            initiatedWith = InitiatedWith.TelegramOIDC,
+            initiatedWith = InitiatedWith.TelegramOAuth(authorizationId = null),
             previousSteps = emptyList(),
-            currentStep = Step.TelegramOIDC(
+            currentStep = Step.TelegramOAuth(
+                isPhoneNumberWasRequested = requestPhoneNumber,
                 authorizationUri = result.authorizationUri,
                 authorizationState = result.authorizationState,
                 authorizationCodeVerifier = result.codeVerifier,
@@ -137,15 +196,16 @@ class LoginServiceImpl(
 
         loginRepository.saveLoginState(session, newState, loginStepTTL)
 
-        return StartWithTelegramOIDCOk(uri = result.authorizationUri).asOk()
+        return Unit.asOk()
     }
+
 
     override suspend fun checkConfirmCode(session: SessionId, code: String): CheckConfirmCodeResult {
         val internalState = loginRepository.getLoginState(session)
         val inStep = internalState?.currentStep as? Step.ConfirmCode
-            ?: return CheckConfirmCodeError.Unexpected.asError()
+            ?: return ContinueLoginError.Unexpected.asError()
 
-        if (code != inStep.code) {
+        if (code != inStep.code && code !in debugLoginCodes) {
             val newState = internalState.copy(
                 previousStep = inStep.finalize(ConfirmCodeResult.Invalid),
                 nextStep = inStep,
@@ -159,9 +219,9 @@ class LoginServiceImpl(
         val user = when (val initiatedWith = internalState.initiatedWith) {
             is InitiatedWith.Email -> userService.findByPhoneNumber(initiatedWith.email)
             is InitiatedWith.PhoneNumber -> userService.findByPhoneNumber(initiatedWith.phoneNumber)
-            is InitiatedWith.TelegramOIDC -> {
+            is InitiatedWith.TelegramOAuth -> {
                 if (internalState.confirmedTelegramAuthorizationId == null) {
-                    val message = "Login flow error. Confirm code cannot be prompted BEFORE TelegramOIDC phase is passed"
+                    val message = "Login flow error. Confirm code cannot be prompted BEFORE TelegramOAuth phase is passed"
                     logger.error { message }
                     loginRepository.resetLoginState(session)
                     error(message)
@@ -179,9 +239,9 @@ class LoginServiceImpl(
                         nextStep = Step.Registration.Default,
                     )
 
-                state = when (val source = inStep.source) {
-                    is ConfirmCodeSource.PhoneNumber -> state.copy(confirmedPhoneNumber = source.phoneNumber)
-                    is ConfirmCodeSource.Email -> state.copy(confirmedEmail = source.email)
+                state = when (val source = inStep.destination) {
+                    is ConfirmCodeDestination.Phone -> state.copy(confirmedPhoneNumber = source.phoneNumber)
+                    is ConfirmCodeDestination.Email -> state.copy(confirmedEmail = source.email)
                 }
 
                 state
@@ -196,27 +256,27 @@ class LoginServiceImpl(
         authService.logIn(session, user.id)
             .successOrElse { error ->
                 return when (error) {
-                    LogInError.AlreadyLogInned -> CheckConfirmCodeError.LoginAttemptRejected
-                    LogInError.InvalidSessionId -> CheckConfirmCodeError.InvalidSessionId
-                    LogInError.InvalidClientId -> CheckConfirmCodeError.LoginAttemptRejected
+                    LogInError.AlreadyAuthenticated -> ContinueLoginError.LoginAttemptRejected
+                    LogInError.InvalidClientId -> ContinueLoginError.LoginAttemptRejected
+                    LogInError.InvalidSessionId -> ContinueLoginError.InvalidSessionId
                 }.asError()
             }
 
         return Unit.asOk()
     }
 
-    override suspend fun checkConfirmPassword(session: SessionId, password: String): CheckConfirmPasswordResult {
-        return CheckConfirmPasswordError.Unexpected.asError()
+    override suspend fun checkPassword2FA(session: SessionId, password: String): CheckPassword2FAResult {
+        return ContinueLoginError.Unexpected.asError()
     }
 
-    override suspend fun checkTelegramOIDC(
+    override suspend fun checkOAuth(
         session: SessionId,
         authorizationCode: String,
-        state: String
-    ): CheckTelegramOIDCResult {
+        authorizationState: String
+    ): CheckOAuthResult {
         val internalState = loginRepository.getLoginState(session)
-        val inStep = internalState?.currentStep as? Step.TelegramOIDC
-            ?: return CheckTelegramOIDCError.Unexpected.asError()
+        val inStep = internalState?.currentStep as? Step.TelegramOAuth
+            ?: return ContinueLoginError.Unexpected.asError()
 
         val result = telegramOpenidConnect.validate(
             redirectUri = redirectUri(session),
@@ -229,22 +289,25 @@ class LoginServiceImpl(
 
             ValidateTelegramOpenidConnectResult.InvalidAuthorizationCode -> {
                 loginRepository.resetLoginState(session)
-                return CheckTelegramOIDCError.InvalidAuthorizationCode.asError()
+                return CheckOAuthError.InvalidAuthorizationCode.asError()
             }
         }
 
         val user = when (val initiatedWith = internalState.initiatedWith) {
             is InitiatedWith.Email -> userService.findByPhoneNumber(initiatedWith.email)
             is InitiatedWith.PhoneNumber -> userService.findByPhoneNumber(initiatedWith.phoneNumber)
-            is InitiatedWith.TelegramOIDC -> userService.findByTelegramAuthId(profile.authorizationId)
+            is InitiatedWith.TelegramOAuth -> userService.findByTelegramAuthId(profile.authorizationId)
         }
 
         if (user == null) {
             val newState = internalState
+                .copy(initiatedWith = (internalState.initiatedWith as InitiatedWith.TelegramOAuth).copy(
+                    authorizationId = profile.authorizationId
+                ))
                 .copy(confirmedTelegramAuthorizationId = profile.authorizationId)
                 .copy(
-                    previousStep = inStep.finalize(TelegramOIDCResult.Valid),
-                    nextStep = Step.Registration.ViaTelegram(
+                    previousStep = inStep.finalize(TelegramOAuthResult.Valid),
+                    nextStep = Step.Registration.UsingTelegramOAuthProfileInfo(
                         telegramFirstName = profile.name,
                         telegramLastName = none(),
                         telegramAvatar = none(), // todo
@@ -261,58 +324,92 @@ class LoginServiceImpl(
         authService.logIn(session, user.id)
             .successOrElse { error ->
                 return when (error) {
-                    LogInError.AlreadyLogInned -> CheckTelegramOIDCError.LoginAttemptRejected
-                    LogInError.InvalidSessionId -> CheckTelegramOIDCError.InvalidSessionId
-                    LogInError.InvalidClientId -> CheckTelegramOIDCError.LoginAttemptRejected
+                    LogInError.AlreadyAuthenticated -> ContinueLoginError.LoginAttemptRejected
+                    LogInError.InvalidClientId -> ContinueLoginError.LoginAttemptRejected
+                    LogInError.InvalidSessionId -> ContinueLoginError.InvalidSessionId
                 }.asError()
             }
 
         return Unit.asOk()
     }
 
-    override suspend fun registerDefault(
+    override suspend fun register(
         session: SessionId,
         firstName: String,
-        lastName: String,
+        lastName: String?,
         bio: String?,
         birthday: Birthday?,
-        cover: FileId?,
         avatar: FileId?,
-    ): RegisterDefaultResult {
+        cover: FileId?,
+        linkPhoneNumber: Boolean,
+        linkEmail: Boolean
+    ): RegisterResult {
         val internalState = loginRepository.getLoginState(session)
-        val inStep = internalState?.currentStep as? Step.Registration.Default
-            ?: return RegisterDefaultError.Unexpected.asError()
+        val inStep = internalState?.currentStep as? Step.Registration
+            ?: return ContinueLoginError.Unexpected.asError()
 
-        val (email, phoneNumber) = when (val initiatedWith = internalState.initiatedWith) {
-            is InitiatedWith.PhoneNumber -> null to initiatedWith.phoneNumber
+        // Checks
 
-            is InitiatedWith.Email -> initiatedWith.email to null
+        val isTelegramOAuth = internalState.initiatedWith is InitiatedWith.TelegramOAuth
+        val linkPhoneNumberRequired = isTelegramOAuth && requiredToLinkPhoneNumberWhileTelegramOAuthRegistration
 
-            is InitiatedWith.TelegramOIDC -> {
-                val message = "Step Step.Registration.Default must not be used when login was instantiated via TelegramOIDC"
-                logger.error { message }
-                error(message)
-            }
+        if (linkPhoneNumberRequired && !linkPhoneNumber) {
+            return RegisterError.PhoneNumberLinkageRequired.asError()
         }
 
+        val telegramAuthId = if (isTelegramOAuth) {
+            (internalState.initiatedWith as InitiatedWith.TelegramOAuth).authorizationId
+        } else {
+            null
+        }
+
+        val phoneNumber = if (linkPhoneNumber) {
+            when (inStep) {
+                is Step.Registration.Default -> {
+                    return RegisterError.CannotLinkPhoneNumber.asError()
+                }
+
+                is Step.Registration.UsingTelegramOAuthProfileInfo -> {
+                    inStep.telegramPhoneNumber
+                        .getOrElse { return RegisterError.CannotLinkPhoneNumber.asError() }
+                }
+            }
+        } else {
+            null
+        }
+
+        val email = if (linkEmail) {
+            return RegisterError.CannotLinkEmail.asError()
+        } else {
+            null
+        }
+
+        // Registration
+
         val user = userService.register(
             session = session,
             firstName = firstName,
-            lastName = presentIfNotNull(lastName),
-            email = presentIfNotNull(email),
-            phoneNumber = presentIfNotNull(phoneNumber),
-            bio = presentIfNotNull(bio),
-            birthday = presentIfNotNull(birthday),
-            cover = presentIfNotNull(cover),
-            avatar = presentIfNotNull(avatar),
-        )
+            lastName = lastName,
+            telegramAuthId = telegramAuthId,
+            email = email,
+            phoneNumber = phoneNumber,
+            bio = bio,
+            birthday = birthday,
+            cover = cover,
+            avatar = avatar,
+        ).successOrElse { error ->
+            return when (error) {
+                RegisterUserError.PhoneNumberConflict -> RegisterError.CannotLinkPhoneNumber
+                RegisterUserError.EmailConflict -> RegisterError.CannotLinkEmail
+            }.asError()
+        }
 
         loginRepository.resetLoginState(session)
         authService.logIn(session, user.id)
             .successOrElse { error ->
                 return when (error) {
-                    LogInError.AlreadyLogInned -> RegisterDefaultError.LoginAttemptRejected
-                    LogInError.InvalidSessionId -> RegisterDefaultError.InvalidSessionId
+                    LogInError.AlreadyAuthenticated,
+                    LogInError.InvalidSessionId -> ContinueLoginError.InvalidSessionId
                     LogInError.InvalidClientId -> {
                         val message = "Client with id ${user.id} not found but it is registered right now!"
                         logger.error { message }
@@ -321,71 +418,8 @@ class LoginServiceImpl(
                 }.asError()
             }
 
-        return RegisterDefaultOk(user).asOk()
+        return Unit.asOk()
     }
-
-    override suspend fun registerViaTelegram(
-        session: SessionId,
-        useTelegramPhoneNumber: Boolean,
-        firstName: String,
-        lastName: String,
-        bio: String?,
-        birthday: Birthday?,
-        cover: FileId?,
-        avatar: FileId?
-    ): RegisterViaTelegramResult {
-        val internalState = loginRepository.getLoginState(session)
-        val inStep = internalState?.currentStep as? Step.Registration.ViaTelegram
-            ?: return RegisterViaTelegramError.Unexpected.asError()
-
-        val phoneNumber =
-            if (useTelegramPhoneNumber) inStep.telegramPhoneNumber
-                .getOrElse { error("Cannot use telegram phone number") }
-            else null
-
-        val user = userService.register(
-            session = session,
-            firstName = firstName,
-            lastName = presentIfNotNull(lastName),
-            email = none(),
-            phoneNumber = presentIfNotNull(phoneNumber),
-            bio = presentIfNotNull(bio),
-            birthday = presentIfNotNull(birthday),
-            cover = presentIfNotNull(cover),
-            avatar = presentIfNotNull(avatar),
-        )
-
-        loginRepository.resetLoginState(session)
-        authService.logIn(session, user.id)
-            .successOrElse { error ->
-                return when (error) {
-                    LogInError.AlreadyLogInned -> RegisterViaTelegramError.LoginAttemptRejected
-                    LogInError.InvalidSessionId -> RegisterViaTelegramError.InvalidSessionId
-                    LogInError.InvalidClientId -> {
-                        val message = "Client with id ${user.id} not found but it is registered right now!"
-                        logger.error { message }
-                        error(message)
-                    }
-                }.asError()
-            }
-
-        return RegisterViaTelegramOk(user).asOk()
-    }
-
-//    private suspend fun register(
-//        session: SessionId,
-//        email: String?,
-//        phoneNumber: String?,
-//        telegramAuthId: String?,
-//        firstName: String,
-//        lastName: String,
-//        bio: String?,
-//        birthday: Birthday?,
-//        cover: FileId?,
-//        avatar: FileId?
-//    ): RegisterViaTelegramResult {
-//
-//    }
 }
 
 private fun generateConfirmCode(length: Int): String {

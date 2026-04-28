@@ -33,7 +33,7 @@ class AuthServiceImpl(
             }
             .onError { error ->
                 when (error) {
-                    LogInError.AlreadyLogInned,
+                    LogInError.AlreadyAuthenticated,
                     LogInError.InvalidClientId,
                     LogInError.InvalidSessionId -> {
                         // do nothing

@@ -87,21 +87,23 @@ suspend fun instantiate(
                 httpClient = { httpClient },
             ),
             authorizationCodeApplier = TelegramAuthorizationCodeApplierKtor(
-                clientId = "0",
-                clientSecret = "0",
+                clientId = "0", // todo
+                clientSecret = "0", // todo
                 telegramTokenUrl = { "https://oauth.telegram.org/token" },
                 httpClient = { httpClient },
             ),
-            clientId = "0",
-            botId = "0",
+            clientId = "0", // todo,
+            botId = "0", // todo
             telegramIssuer = "https://oauth.telegram.org",
         ),
         loginRepository = LoginRepositoryRedis(redisClient.connect().coroutines()),
         loginStepTTL = 5.minutes,
         confirmCodeLength = { listOf(4, 6).random() },
         redirectUri = { sessionId ->
-            "https://yto.y9maly.me/login/telegramOIDC/${sessionId.long}"
+            "https://yto.y9maly.me/login/telegramOAuth/${sessionId.long}"
         },
+        requiredToLinkPhoneNumberWhileTelegramOAuthRegistration = false,
+        debugLoginCodes = setOf("123"),
     )
 
     // presentation/infrastructure

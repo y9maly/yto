@@ -6,10 +6,15 @@ import domain.event.UserRegistered
 import domain.service.result.*
 import integration.eventCollector.EventCollector
 import integration.repository.RepositoryCollection
+import integration.repository.result.CreateUserError
+import integration.repository.result.CreateUserResult
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.asError
+import y9to.libs.stdlib.asOk
+import y9to.libs.stdlib.ifSuccess
 import y9to.libs.stdlib.optional.Optional
 import y9to.libs.stdlib.optional.map
+import y9to.libs.stdlib.successOrElse
 import kotlin.time.Clock
 
 
@@ -44,17 +49,19 @@ class UserServiceImpl(
 
     override suspend fun register(
         session: SessionId,
+        telegramAuthId: String?,
+        phoneNumber: String?,
+        email: String?,
         firstName: String,
-        lastName: Optional<String>,
-        email: Optional<String>,
-        phoneNumber: Optional<String>,
-        bio: Optional<String>,
-        birthday: Optional<Birthday>,
-        cover: Optional<FileId?>,
-        avatar: Optional<FileId?>,
-    ): User {
+        lastName: String?,
+        bio: String?,
+        birthday: Birthday?,
+        cover: FileId?,
+        avatar: FileId?,
+    ): RegisterUserResult {
         val user = repo.user.create(
             registrationDate = clock.now(),
+            telegramAuthId = telegramAuthId,
             phoneNumber = phoneNumber,
             email = email,
             firstName = firstName,
@@ -63,11 +70,16 @@ class UserServiceImpl(
             birthday = birthday,
             cover = cover,
             avatar = avatar,
-        )
+        ).successOrElse { error ->
+            return when (error) {
+                CreateUserError.PhoneNumberConflict -> RegisterUserError.PhoneNumberConflict.asError()
+                CreateUserError.EmailConflict -> RegisterUserError.EmailConflict.asError()
+            }
+        }
 
         eventCollector.emit(UserRegistered(user))
 
-        return user
+        return user.asOk()
     }
 
     override suspend fun edit(

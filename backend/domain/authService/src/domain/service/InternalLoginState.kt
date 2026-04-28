@@ -1,12 +1,13 @@
 package domain.service
 
-import backend.core.types.File
+import backend.core.types.ConfirmCodeDestination
+import backend.core.types.FileId
 import domain.service.InternalLoginState.ConfirmCodeResult
-import domain.service.InternalLoginState.ConfirmPasswordResult
+import domain.service.InternalLoginState.Password2FAResult
 import domain.service.InternalLoginState.PreviousStep
 import domain.service.InternalLoginState.RegistrationResult
 import domain.service.InternalLoginState.Step
-import domain.service.InternalLoginState.TelegramOIDCResult
+import domain.service.InternalLoginState.TelegramOAuthResult
 import y9to.libs.stdlib.optional.Optional
 import kotlinx.serialization.Serializable as S
 
@@ -27,7 +28,7 @@ import kotlinx.serialization.Serializable as S
         /**
          * TelegramOpenIDConnect
          */
-        @S data object TelegramOIDC : InitiatedWith
+        @S data class TelegramOAuth(val authorizationId: String?) : InitiatedWith
     }
 
     /**
@@ -38,8 +39,8 @@ import kotlinx.serialization.Serializable as S
             require(
                 (step is Step.Registration && stepResult is RegistrationResult) ||
                 (step is Step.ConfirmCode && stepResult is ConfirmCodeResult) ||
-                (step is Step.ConfirmPassword && stepResult is ConfirmPasswordResult) ||
-                (step is Step.TelegramOIDC && stepResult is TelegramOIDCResult)
+                (step is Step.Password2FA && stepResult is Password2FAResult) ||
+                (step is Step.TelegramOAuth && stepResult is TelegramOAuthResult)
             )
         }
     }
@@ -49,22 +50,21 @@ import kotlinx.serialization.Serializable as S
         @S sealed interface Registration : Step<RegistrationResult> {
             @S data object Default : Registration
 
-            @S data class ViaTelegram(
+            @S data class UsingTelegramOAuthProfileInfo(
                 val telegramFirstName: Optional<String>,
                 val telegramLastName: Optional<String>,
-                val telegramAvatar: Optional<File>,
+                val telegramAvatar: Optional<FileId>,
                 val telegramPhoneNumber: Optional<String>,
             ) : Registration
         }
 
-        @S data class ConfirmCode(val source: ConfirmCodeSource, val code: String) : Step<ConfirmCodeResult>
+        @S data class ConfirmCode(val code: String, val destination: ConfirmCodeDestination) : Step<ConfirmCodeResult>
 
-        @S data object ConfirmPassword : Step<ConfirmPasswordResult>
+        @S data object Password2FA : Step<Password2FAResult>
 
-        /**
-         * TelegramOpenIDConnect
-         */
-        @S data class TelegramOIDC(
+        @S data class TelegramOAuth(
+            val isPhoneNumberWasRequested: Boolean,
+
             val authorizationUri: String,
 
             /**
@@ -77,21 +77,28 @@ import kotlinx.serialization.Serializable as S
              * OAuth codeVerifier.
              */
             val authorizationCodeVerifier: String,
-        ) : Step<TelegramOIDCResult>
+        ) : Step<TelegramOAuthResult>
     }
 
-    @S sealed interface ConfirmCodeSource {
-        @S data class PhoneNumber(val phoneNumber: String) : ConfirmCodeSource
-        @S data class Email(val email: String) : ConfirmCodeSource
+    @S sealed interface RegistrationResult : StepResult {
+        @S data object Accepted : RegistrationResult
+        @S data object Rejected : RegistrationResult
     }
 
-    @S enum class RegistrationResult : StepResult { Accepted, Rejected }
+    @S sealed interface ConfirmCodeResult : StepResult {
+        @S data object Valid : ConfirmCodeResult
+        @S data object Invalid : ConfirmCodeResult
+    }
 
-    @S enum class ConfirmCodeResult : StepResult { Valid, Invalid }
+    @S sealed interface Password2FAResult : StepResult {
+        @S data object Valid : Password2FAResult
+        @S data object Invalid : Password2FAResult
+    }
 
-    @S enum class ConfirmPasswordResult : StepResult { Valid, Invalid }
-
-    @S enum class TelegramOIDCResult : StepResult { Valid, Invalid }
+    @S sealed interface TelegramOAuthResult : StepResult {
+        @S data object Valid : TelegramOAuthResult
+        @S data object Invalid : TelegramOAuthResult
+    }
 }
 
 fun InternalLoginState.copy(
@@ -105,28 +112,28 @@ fun InternalLoginState.copy(
 inline fun <R> PreviousStep.fold(
     registration: (Step.Registration, RegistrationResult) -> R,
     confirmCode: (Step.ConfirmCode, ConfirmCodeResult) -> R,
-    confirmPassword: (Step.ConfirmPassword, ConfirmPasswordResult) -> R,
-    telegramOIDC: (Step.TelegramOIDC, TelegramOIDCResult) -> R,
+    password2FA: (Step.Password2FA, Password2FAResult) -> R,
+    telegramOAuth: (Step.TelegramOAuth, TelegramOAuthResult) -> R,
 ): R = when (step) {
     is Step.Registration -> registration(step, stepResult as RegistrationResult)
     is Step.ConfirmCode -> confirmCode(step, stepResult as ConfirmCodeResult)
-    is Step.ConfirmPassword -> confirmPassword(step, stepResult as ConfirmPasswordResult)
-    is Step.TelegramOIDC ->telegramOIDC(step, stepResult as TelegramOIDCResult)
+    is Step.Password2FA -> password2FA(step, stepResult as Password2FAResult)
+    is Step.TelegramOAuth ->telegramOAuth(step, stepResult as TelegramOAuthResult)
 }
 
 inline fun Step<*>.finalize(
     registration: (Step.Registration) -> RegistrationResult,
     confirmCode: (Step.ConfirmCode) -> ConfirmCodeResult,
-    confirmPassword: (Step.ConfirmPassword) -> ConfirmPasswordResult,
-    telegramOIDC: (Step.TelegramOIDC) -> TelegramOIDCResult,
+    password2FA: (Step.Password2FA) -> Password2FAResult,
+    telegramOAuth: (Step.TelegramOAuth) -> TelegramOAuthResult,
 ): PreviousStep = when (this) {
     is Step.Registration -> finalize(registration(this))
     is Step.ConfirmCode -> finalize(confirmCode(this))
-    is Step.ConfirmPassword -> finalize(confirmPassword(this))
-    is Step.TelegramOIDC -> finalize(telegramOIDC(this))
+    is Step.Password2FA -> finalize(password2FA(this))
+    is Step.TelegramOAuth -> finalize(telegramOAuth(this))
 }
 
 fun Step.Registration.finalize(result: RegistrationResult): PreviousStep = PreviousStep(this, result)
 fun Step.ConfirmCode.finalize(result: ConfirmCodeResult): PreviousStep = PreviousStep(this, result)
-fun Step.ConfirmPassword.finalize(result: ConfirmPasswordResult): PreviousStep = PreviousStep(this, result)
-fun Step.TelegramOIDC.finalize(result: TelegramOIDCResult): PreviousStep = PreviousStep(this, result)
+fun Step.Password2FA.finalize(result: Password2FAResult): PreviousStep = PreviousStep(this, result)
+fun Step.TelegramOAuth.finalize(result: TelegramOAuthResult): PreviousStep = PreviousStep(this, result)

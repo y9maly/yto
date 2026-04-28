@@ -4,6 +4,7 @@ import backend.core.types.FileId
 import backend.core.types.User
 import backend.core.types.UserId
 import backend.core.types.UserRef
+import integration.repository.result.CreateUserResult
 import integration.repository.result.EditUserResult
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.optional.Optional
@@ -26,15 +27,16 @@ interface UserRepository {
 
     suspend fun create(
         registrationDate: Instant,
-        phoneNumber: Optional<String?>,
-        email: Optional<String?>,
+        telegramAuthId: String?,
+        phoneNumber: String?,
+        email: String?,
         firstName: String,
-        lastName: Optional<String?>,
-        bio: Optional<String?>,
-        birthday: Optional<Birthday?>,
-        cover: Optional<FileId?>,
-        avatar: Optional<FileId?>,
-    ): User
+        lastName: String?,
+        bio: String?,
+        birthday: Birthday?,
+        cover: FileId?,
+        avatar: FileId?,
+    ): CreateUserResult
 
     /**
      * @return new user; null if invalid user id

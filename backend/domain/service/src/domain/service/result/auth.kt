@@ -8,7 +8,7 @@ typealias LogoutResult = Union<Unit, LogOutError>
 
 
 sealed interface LogInError {
-    data object AlreadyLogInned : LogInError
+    data object AlreadyAuthenticated : LogInError
     data object InvalidSessionId : LogInError
     data object InvalidClientId : LogInError
 }

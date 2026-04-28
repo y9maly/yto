@@ -80,7 +80,7 @@ internal class PostgresAuthRepository(private val main: MainRepository) : AuthRe
     override suspend fun logIn(session: SessionId, client: ClientId): LogInResult = main.transaction {
         when (getAuthState(session)) {
             is AuthState.Unauthorized -> { /* ok */ }
-            is AuthState.Authorized -> return@transaction LogInError.AlreadyLogInned.asError()
+            is AuthState.Authorized -> return@transaction LogInError.AlreadyAuthenticated.asError()
             null -> return@transaction LogInError.InvalidSessionId.asError()
         }
 
