@@ -28,6 +28,7 @@ internal class UpdateCenter(
                 try {
                     request {
                         rpc.update.receive(token).collect {
+                            preUpdate(it)
                             check(_updates.tryEmit(it))
                         }
                     }
@@ -107,6 +108,15 @@ internal class UpdateCenter(
                 }
             }
         }
+    }
+
+    private fun Update.invalidatesAccessToken(): Boolean {
+        return this is Update.AuthStateChanged
+    }
+
+    private fun preUpdate(update: Update) {
+        if (update.invalidatesAccessToken())
+            client.requestController.invalidateAccessToken()
     }
 
     suspend fun subscribe(subscription: ApiUpdateSubscription) {

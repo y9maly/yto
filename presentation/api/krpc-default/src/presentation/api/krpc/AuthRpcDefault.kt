@@ -99,6 +99,9 @@ class AuthRpcDefault(
         )
     }
 
+    override suspend fun cancelLogin(token: Token) =
+        authenticate(token) { cancelLogin() }
+
     private suspend inline fun <R> authenticate(token: Token, block: context(Context) AuthController.() -> R) =
         authenticate(authenticator, token) { block(this, controller) }
 }

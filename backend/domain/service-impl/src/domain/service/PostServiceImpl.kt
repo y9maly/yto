@@ -92,7 +92,7 @@ class PostServiceImpl(
                 .mapOptions { userId ->
                     PostRepository.SliceOptions(
                         predicate = Predicate.Criteria(PostCriteria.Location(
-                            location = Predicate.Criteria(PostLocationCriteria.Author(
+                            location = Predicate.Criteria(PostLocationCriteria.Profile(
                                 user = Predicate.Criteria(UserCriteria.Id(userId))
                             ))
                         ))

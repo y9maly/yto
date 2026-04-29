@@ -49,4 +49,6 @@ interface AuthController {
         linkPhoneNumber: Boolean,
         linkEmail: Boolean,
     ): RegisterResult
+
+    context(_: Context) suspend fun cancelLogin()
 }

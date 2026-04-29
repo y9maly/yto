@@ -35,18 +35,10 @@ class AuthClient internal constructor(
         .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
 
     val loginState: Flow<LoginState?> = channelFlow {
-        val isAuthorizedFlow = authState.map { it is AuthState.Authorized }
+        send(request { rpc.auth.getLoginState(token) })
 
-        isAuthorizedFlow.collectLatest { isAuthorized ->
-            if (isAuthorized) {
-                send(null)
-                return@collectLatest
-            }
-
-            while (true) {
-                send(request { rpc.auth.getLoginState(token) })
-                delay(1000.milliseconds)
-            }
+        client.updateCenter.updates.filterIsInstance<Update.LoginStateChanged>().collect {
+            send(it.loginState)
         }
     }
         .distinctUntilChanged()
@@ -55,7 +47,6 @@ class AuthClient internal constructor(
     suspend fun logOut(): LogOutResult {
         return request {
             rpc.auth.logOut(token)
-                .also { client.requestController.invalidateAccessToken() }
         }
     }
 
@@ -114,5 +105,9 @@ class AuthClient internal constructor(
             linkPhoneNumber = linkPhoneNumber,
             linkEmail = linkEmail,
         ) }
+    }
+
+    suspend fun cancelLogin() {
+        request { rpc.auth.cancelLogin(token) }
     }
 }

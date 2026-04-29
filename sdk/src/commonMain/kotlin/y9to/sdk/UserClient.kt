@@ -11,6 +11,7 @@ import y9to.libs.stdlib.optional.none
 import y9to.sdk.internals.ClientOwner
 import y9to.sdk.internals.request
 import kotlin.coroutines.cancellation.CancellationException
+import kotlin.time.Duration.Companion.milliseconds
 
 
 class UserClient internal constructor(override val client: Client) : ClientOwner {
@@ -22,10 +23,10 @@ class UserClient internal constructor(override val client: Client) : ClientOwner
             }
 
             var profile = request { rpc.user.getMyProfile(token) }
-                ?: run {
-                    send(null)
-                    return@collectLatest
-                }
+            while (profile == null) {
+                delay(1000.milliseconds)
+                profile = request { rpc.user.getMyProfile(token) }
+            }
             send(profile)
 
             client.updateCenter.updates.filterIsInstance<Update.AuthStateChanged>().collectIn(this) { update ->

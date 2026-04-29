@@ -56,7 +56,7 @@ internal fun createRpc(
 }
 
 internal fun createController(
-    fileGatewayAddress: String, //   https://example.com
+    fileGatewayUrl: String,     //   https://example.com
     uploadFilePath: String,     //   file/upload
     downloadFilePath: String,   //   file/download
     loginService: LoginService,
@@ -75,14 +75,14 @@ internal fun createController(
                 val uriBase64 = Base64.UrlSafe
                     .encode(uri.toByteArray(Charsets.UTF_8))
                     .replace('=', '_')
-                val url = "$fileGatewayAddress/$uploadFilePath/$uriBase64"
+                val url = "$fileGatewayUrl/$uploadFilePath/$uriBase64"
                 FileSink.HttpOctetStream(url)
             },
             fileSource = { uri ->
                 val uriBase64 = Base64.UrlSafe
                     .encode(uri.toByteArray(Charsets.UTF_8))
                     .replace('=', '_')
-                val url = "$fileGatewayAddress/$downloadFilePath/$uriBase64"
+                val url = "$fileGatewayUrl/$downloadFilePath/$uriBase64"
                 FileSource.HttpOctetStream(url)
             }
         ),

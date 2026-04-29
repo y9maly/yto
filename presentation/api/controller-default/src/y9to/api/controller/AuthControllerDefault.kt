@@ -186,4 +186,9 @@ class AuthControllerDefault(
             }
         }
     }
+
+    context(_: Context)
+    override suspend fun cancelLogin() {
+        loginService.cancelLogin(sessionId)
+    }
 }

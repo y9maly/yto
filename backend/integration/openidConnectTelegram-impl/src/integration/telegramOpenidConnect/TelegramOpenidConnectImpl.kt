@@ -129,7 +129,7 @@ class TelegramOpenidConnectImpl(
 
         return TelegramOAuthProfile(
             authorizationId = jwt.subject,
-            id = presentIfNotNull(jwt.getClaim("id").asLong()),
+            id = presentIfNotNull(jwt.getClaim("id").asString().toLongOrNull()),
             name = presentIfNotNull(jwt.getClaim("name").asString()),
             preferredUsername = presentIfNotNull(jwt.getClaim("preferred_username").asString()),
             avatar = presentIfNotNull(jwt.getClaim("picture").asString()),

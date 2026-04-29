@@ -16,6 +16,9 @@ import kotlinx.serialization.Serializable as S
     @SerialName("AuthStateChanged")
     @S data class AuthStateChanged(val authState: AuthState) : Update
 
+    @SerialName("LoginStateChanged")
+    @S data class LoginStateChanged(val loginState: LoginState?) : Update
+
     @SerialName("UserEdited")
     @S data class UserEdited(val newUser: User) : Update
 

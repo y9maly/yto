@@ -15,6 +15,8 @@ import io.ktor.http.HttpStatusCode.Companion.Forbidden
 import io.ktor.http.HttpStatusCode.Companion.NotFound
 import io.ktor.http.HttpStatusCode.Companion.OK
 import io.ktor.http.HttpStatusCode.Companion.Unauthorized
+import io.ktor.http.appendEncodedPathSegments
+import io.ktor.http.buildUrl
 import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.html.respondHtml
@@ -25,15 +27,18 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.request.receiveChannel
 import io.ktor.server.response.respond
 import io.ktor.server.response.respondBytesWriter
+import io.ktor.server.response.respondRedirect
 import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.routing
+import io.ktor.server.util.url
 import io.ktor.server.websocket.WebSockets
 import io.ktor.utils.io.exhausted
 import io.ktor.utils.io.read
 import io.ktor.utils.io.write
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
+import kotlinx.html.InputAutoComplete.url
 import kotlinx.html.body
 import kotlinx.html.head
 import kotlinx.html.span
@@ -131,69 +136,7 @@ fun Monolith.startKtorServer(
                 }
             }
 
-            get("/login/telegramOAuth/{sessionId}") {
-                val sessionId = call.parameters["sessionId"]!!.toLong()
-
-                loginService.checkOAuth(
-                    session = SessionId(sessionId),
-                    authorizationCode = call.parameters["code"]!!,
-                    authorizationState = call.parameters["state"]!!,
-                ).successOrElse { error ->
-                    when (error) {
-                        CheckOAuthError.InvalidAuthorizationCode -> call.respondHtml(BadRequest) {
-                            head { title { +"Login with Telegram Error" } }
-
-                            body {
-                                span {
-                                    +"Invalid link. Provided code is invalid"
-                                }
-                            }
-                        }
-
-                        CheckOAuthError.InvalidAuthorizationState -> call.respondHtml(BadRequest) {
-                            head { title { +"Login with Telegram Error" } }
-
-                            body {
-                                span {
-                                    +"Invalid link. Provided state is invalid"
-                                }
-                            }
-                        }
-
-                        ContinueLoginError.InvalidSessionId -> call.respondHtml(Unauthorized) {
-                            head { title { +"Login with Telegram Error" } }
-
-                            body {
-                                span {
-                                    +"Unauthorized"
-                                }
-                            }
-                        }
-
-                        ContinueLoginError.LoginAttemptRejected -> call.respondHtml(Forbidden) {
-                            head { title { +"Login with Telegram Error" } }
-
-                            body {
-                                span {
-                                    +"Login attempt rejected"
-                                }
-                            }
-                        }
-
-                        ContinueLoginError.Unexpected -> call.respondHtml(NotFound) {
-                            head { title { +"Login with Telegram Error" } }
-
-                            body {
-                                span {
-                                    +"Unexpected"
-                                }
-                            }
-                        }
-                    }
-
-                    return@get
-                }
-
+            get("/login/telegramOAuth/success") {
                 call.respondHtml(OK) {
                     head { title { +"Login with Telegram Success" } }
 
@@ -203,6 +146,99 @@ fun Monolith.startKtorServer(
                         }
                     }
                 }
+            }
+
+            get("/login/telegramOAuth/error/{title}/{message}") {
+                val title = call.parameters["title"]!!
+                val message = call.parameters["message"]!!
+
+                call.respondHtml(OK) {
+                    head { title { +title } }
+
+                    body {
+                        span {
+                            +message
+                        }
+                    }
+                }
+            }
+
+            get("/login/telegramOAuth/{sessionId}") {
+                val sessionId = call.parameters["sessionId"]!!.toLong()
+
+                loginService.checkOAuth(
+                    session = SessionId(sessionId),
+                    authorizationCode = call.parameters["code"]!!,
+                    authorizationState = call.parameters["state"]!!,
+                ).successOrElse { error ->
+                    when (error) {
+                        CheckOAuthError.InvalidAuthorizationCode -> call.respondRedirect(buildUrl {
+                            port = config.port
+                            appendEncodedPathSegments(listOf(
+                                "login",
+                                "telegramOAuth",
+                                "error",
+                                "Login with Telegram Error",
+                                "Invalid link. Provided code is invalid",
+                            ))
+                        })
+
+                        CheckOAuthError.InvalidAuthorizationState -> call.respondRedirect(buildUrl {
+                            port = config.port
+                            appendEncodedPathSegments(listOf(
+                                "login",
+                                "telegramOAuth",
+                                "error",
+                                "Login with Telegram Error",
+                                "Invalid link. Provided state is invalid",
+                            ))
+                        })
+
+                        ContinueLoginError.InvalidSessionId -> call.respondRedirect(buildUrl {
+                            port = config.port
+                            appendEncodedPathSegments(listOf(
+                                "login",
+                                "telegramOAuth",
+                                "error",
+                                "Login with Telegram Error",
+                                "Unauthorized",
+                            ))
+                        })
+
+                        ContinueLoginError.LoginAttemptRejected -> call.respondRedirect(buildUrl {
+                            port = config.port
+                            appendEncodedPathSegments(listOf(
+                                "login",
+                                "telegramOAuth",
+                                "error",
+                                "Login with Telegram Error",
+                                "Sorry, but your login attempt was rejected",
+                            ))
+                        })
+
+                        ContinueLoginError.Unexpected -> call.respondRedirect(buildUrl {
+                            port = config.port
+                            appendEncodedPathSegments(listOf(
+                                "login",
+                                "telegramOAuth",
+                                "error",
+                                "Login with Telegram Error",
+                                "Unexpected",
+                            ))
+                        })
+                    }
+
+                    return@get
+                }
+
+                call.respondRedirect(buildUrl {
+                    port = config.port
+                    appendEncodedPathSegments(listOf(
+                        "login",
+                        "telegramOAuth",
+                        "success",
+                    ))
+                })
             }
 
             post("file/upload/{uri}") {

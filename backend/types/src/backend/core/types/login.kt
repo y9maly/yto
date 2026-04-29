@@ -1,5 +1,6 @@
 package backend.core.types
 
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable as S
 import y9to.libs.stdlib.optional.Optional
 
@@ -10,21 +11,25 @@ import y9to.libs.stdlib.optional.Optional
 )
 
 @S sealed interface LoginState {
+    @SerialName("ConfirmCode")
     @S data class ConfirmCode(
         val digitsOnly: Boolean,
         val length: Int,
         val destination: ConfirmCodeDestination,
     ) : LoginState
 
+    @SerialName("Password2FA")
     @S data class Password2FA(
         val hint: String?,
     ) : LoginState
 
+    @SerialName("OAuthInProgress")
     @S data class OAuthInProgress(
         val sessionInfo: OAuthSessionInfo,
         val authorizationUri: String,
     ) : LoginState
 
+    @SerialName("Registration")
     @S data class Registration(
         val preFilledRegistrationFields: PreFilledRegistrationFields,
         val linkPhoneNumberInfo: LinkPhoneNumberInfo,

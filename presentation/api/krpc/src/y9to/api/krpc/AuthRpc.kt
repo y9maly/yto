@@ -44,4 +44,6 @@ interface AuthRpc {
         linkPhoneNumber: Boolean,
         linkEmail: Boolean,
     ): RegisterResult
+
+    suspend fun cancelLogin(token: Token)
 }

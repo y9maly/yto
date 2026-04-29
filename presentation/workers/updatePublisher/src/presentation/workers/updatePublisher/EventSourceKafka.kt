@@ -2,6 +2,7 @@ package presentation.workers.updatePublisher
 
 import domain.event.AuthStateChanged
 import domain.event.Event
+import domain.event.LoginStateChanged
 import domain.event.PostContentEdited
 import domain.event.PostCreated
 import domain.event.PostDeleted
@@ -61,6 +62,7 @@ class EventSourceKafka(
             listOf(
                 "event.session_created",
                 "event.auth_state_changed",
+                "event.login_state_changed",
                 "event.post_created",
                 "event.post_content_edited",
                 "event.post_deleted",
@@ -106,6 +108,9 @@ class EventSourceKafka(
 
             "event.auth_state_changed" ->
                 json.decodeFromString<AuthStateChanged>(payload)
+
+            "event.login_state_changed" ->
+                json.decodeFromString<LoginStateChanged>(payload)
 
             "event.post_created" ->
                 json.decodeFromString<PostCreated>(payload)

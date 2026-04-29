@@ -2,6 +2,7 @@ package integration.eventCollector
 
 import domain.event.AuthStateChanged
 import domain.event.Event
+import domain.event.LoginStateChanged
 import domain.event.PostContentEdited
 import domain.event.PostCreated
 import domain.event.PostDeleted
@@ -55,6 +56,12 @@ class KafkaEventCollector(
 
             is AuthStateChanged -> {
                 topic = "event.auth_state_changed"
+                key = event.session.long.toString()
+                payload = json.encodeToString(event)
+            }
+
+            is LoginStateChanged -> {
+                topic = "event.login_state_changed"
                 key = event.session.long.toString()
                 payload = json.encodeToString(event)
             }

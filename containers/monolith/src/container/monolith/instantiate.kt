@@ -42,8 +42,10 @@ suspend fun instantiate(
     redisUrl: String = MonolithDefaults.redisUrl,
     kafkaUrl: String = MonolithDefaults.kafkaUrl,
     postgresUrl: String = MonolithDefaults.postgresUrl,
-    fileGatewayAddress: String = MonolithDefaults.fileGatewayAddress,
-    oauthRedirectAddress: String = MonolithDefaults.oauthRedirectAddress,
+    fileGatewayUrl: String = MonolithDefaults.fileGatewayUrl,
+    telegramOAuthRedirectUrl: String = MonolithDefaults.telegramOAuthRedirectUrl,
+    telegramOAuthClientId: String? = MonolithDefaults.telegramOAuthClientId,
+    telegramOAuthClientSecret: String? = MonolithDefaults.telegramOAuthClientSecret,
     filesDirectory: String = MonolithDefaults.filesDirectory,
 ): Monolith {
     // backend/infrastructure
@@ -57,19 +59,21 @@ suspend fun instantiate(
 
     // backend/domain
 
+    val eventCollector = KafkaEventCollector(
+        scope = GlobalScope + Dispatchers.IO,
+        producer = KafkaProducer(
+            Properties().apply {
+                put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl)
+                put(ProducerConfig.RETRIES_CONFIG, 3)
+            },
+            StringSerializer(),
+            StringSerializer(),
+        )
+    )
+
     val service = createService(
         repository = repository,
-        eventCollector = KafkaEventCollector(
-            scope = GlobalScope + Dispatchers.IO,
-            producer = KafkaProducer(
-                Properties().apply {
-                    put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, kafkaUrl)
-                    put(ProducerConfig.RETRIES_CONFIG, 3)
-                },
-                StringSerializer(),
-                StringSerializer(),
-            )
-        ),
+        eventCollector = eventCollector,
         clock = Clock.System,
         fileStorage = fileStorage,
     )
@@ -77,30 +81,33 @@ suspend fun instantiate(
     val loginService = LoginServiceImpl(
         authService = service.auth,
         userService = service.user,
-        telegramOpenidConnect = TelegramOpenidConnectImpl(
-            publicKeyProvider = TelegramPublicKeyProviderKtor(
-                cache = TelegramPublicKeyCacheRedis(
-                    ttl = 5.minutes,
-                    commands = redisClient.connect().coroutines()
+        eventCollector = eventCollector,
+        telegramOpenidConnect = if (telegramOAuthClientId != null && telegramOAuthClientSecret != null) {
+            TelegramOpenidConnectImpl(
+                publicKeyProvider = TelegramPublicKeyProviderKtor(
+                    cache = TelegramPublicKeyCacheRedis(
+                        ttl = 5.minutes,
+                        commands = redisClient.connect().coroutines()
+                    ),
+                    wellKnownJWKSUrl = { "https://oauth.telegram.org/.well-known/jwks.json" },
+                    httpClient = { httpClient },
                 ),
-                wellKnownJWKSUrl = { "https://oauth.telegram.org/.well-known/jwks.json" },
-                httpClient = { httpClient },
-            ),
-            authorizationCodeApplier = TelegramAuthorizationCodeApplierKtor(
-                clientId = "0", // todo
-                clientSecret = "0", // todo
-                telegramTokenUrl = { "https://oauth.telegram.org/token" },
-                httpClient = { httpClient },
-            ),
-            clientId = "0", // todo,
-            botId = "0", // todo
-            telegramIssuer = "https://oauth.telegram.org",
-        ),
+                authorizationCodeApplier = TelegramAuthorizationCodeApplierKtor(
+                    clientId = telegramOAuthClientId,
+                    clientSecret = telegramOAuthClientSecret,
+                    telegramTokenUrl = { "https://oauth.telegram.org/token" },
+                    httpClient = { httpClient },
+                ),
+                clientId = telegramOAuthClientId,
+                botId = telegramOAuthClientId,
+                telegramIssuer = "https://oauth.telegram.org",
+            )
+        } else null,
         loginRepository = LoginRepositoryRedis(redisClient.connect().coroutines()),
         loginStepTTL = 5.minutes,
         confirmCodeLength = { listOf(4, 6).random() },
         redirectUri = { sessionId ->
-            "https://yto.y9maly.me/login/telegramOAuth/${sessionId.long}"
+            "$telegramOAuthRedirectUrl/login/telegramOAuth/${sessionId.long}"
         },
         requiredToLinkPhoneNumberWhileTelegramOAuthRegistration = false,
         debugLoginCodes = setOf("123"),
@@ -139,7 +146,7 @@ suspend fun instantiate(
     val assembler = createAssembler(service)
     val presenter = createPresenter(service)
     val controller = createController(
-        fileGatewayAddress = fileGatewayAddress,
+        fileGatewayUrl = fileGatewayUrl,
         uploadFilePath = "file/upload",
         downloadFilePath = "file/download",
         service = service,

@@ -24,4 +24,10 @@ interface PostPresenter {
 
 
 context(_: Context, presenter: PostPresenter)
+suspend fun BackendPostId.map(): PostId = presenter.PostId(this)
+
+context(_: Context, presenter: PostPresenter)
 suspend fun BackendPost.map(): Post = presenter.Post(this)
+
+context(_: Context, presenter: PostPresenter)
+suspend fun BackendPostContent.map(): PostContent = presenter.PostContent(this)

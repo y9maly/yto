@@ -40,4 +40,6 @@ interface LoginService {
         linkPhoneNumber: Boolean,
         linkEmail: Boolean,
     ): RegisterResult
+
+    suspend fun cancelLogin(session: SessionId)
 }

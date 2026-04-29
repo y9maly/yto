@@ -42,14 +42,18 @@ services:
       AUTH_SECRET: AWPe04G9E2
       KTOR_HOST: 0.0.0.0
       KTOR_PORT: 8103
-      KTOR_FILE_GATEWAY_ADDRESS: https://yto.y9maly.me:443 # http://localhost:8080 for local development
       KAFKA_URL: yt-kafka:9092
       POSTGRES_URL: r2dbc:postgresql://postgres:qwerty@yt-postgres:5432/db
       REDIS_URL: redis://yt-redis:6379
+      KTOR_FILE_GATEWAY_URL: http://localhost:8103
       YTO_FILES_DIRECTORY: /files
       CORS: ENABLED # ENABLED / DISABLED
       CORS_HOST_STRATEGY: "[\"https://yto.y9maly.me\"]" # Or "*" to allow any host. Used only if CORS=ENABLED.
       STATIC_FILES: "[{\"remote_path\": \"/\", \"directory\": \"/static\", \"default\": \"index.html\"}]"
+      # Set yours client id and client secret
+#      TELEGRAM_OAUTH_CLIENT_ID: 8671391783
+#      TELEGRAM_OAUTH_CLIENT_SECRET: KTQuDMoklVmhO2xLqPNGi_9omE13xBXjYdvebFCqGRvtp5A7efAD93
+      TELEGRAM_OAUTH_REDIRECT_URL: http://127.0.0.1:8103
     volumes:
       - /path/to/files:/files
       - /path/to/static:/static

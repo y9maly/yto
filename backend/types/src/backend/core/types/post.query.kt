@@ -24,6 +24,9 @@ typealias PostPredicate = Predicate<PostCriteria>
     @SerialName("Location")
     @S data class Location(val location: PostLocationPredicate) : PostCriteria
 
+    @SerialName("Author")
+    @S data class Author(val user: UserPredicate) : PostCriteria
+
     @SerialName("ContentType")
     @S data class ContentType(val type: PostContentType) : PostCriteria
 }
@@ -32,9 +35,6 @@ typealias PostLocationPredicate = Predicate<PostLocationCriteria>
 @S sealed interface PostLocationCriteria {
     @SerialName("Global")
     @S data object Global : PostLocationCriteria
-
-    @SerialName("Author")
-    @S data class Author(val user: UserPredicate) : PostLocationCriteria
 
     @SerialName("AnyProfile")
     @S data object AnyProfile : PostLocationCriteria

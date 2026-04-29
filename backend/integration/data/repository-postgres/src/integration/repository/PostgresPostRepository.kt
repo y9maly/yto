@@ -237,29 +237,29 @@ private fun PostPredicate(predicate: PostPredicate) = PredicateOp(predicate) { c
                 PostLocationCriteria.AnyProfile -> {
                     VPost.location_profile.isNotNull()
                 }
+            }
+        }
 
-                is PostLocationCriteria.Author -> PredicateOp(locationCriteria.user) { userCriteria ->
-                    when (userCriteria) {
-                        is UserCriteria.Id -> {
-                            VPost.author_id eq userCriteria.id.long
-                        }
+        is PostCriteria.Author -> PredicateOp(criteria.user) { userCriteria ->
+            when (userCriteria) {
+                is UserCriteria.Id -> {
+                    VPost.author_id eq userCriteria.id.long
+                }
 
-                        is UserCriteria.FirstName.Matches -> {
-                            VPost.author_first_name match userCriteria.regex.pattern
-                        }
+                is UserCriteria.FirstName.Matches -> {
+                    VPost.author_first_name match userCriteria.regex.pattern
+                }
 
-                        is UserCriteria.LastName.Null -> {
-                            VPost.author_last_name.isNull()
-                        }
+                is UserCriteria.LastName.Null -> {
+                    VPost.author_last_name.isNull()
+                }
 
-                        is UserCriteria.LastName.NotNull -> {
-                            VPost.author_last_name.isNotNull()
-                        }
+                is UserCriteria.LastName.NotNull -> {
+                    VPost.author_last_name.isNotNull()
+                }
 
-                        is UserCriteria.LastName.Matches -> {
-                            VPost.author_last_name match userCriteria.regex.pattern
-                        }
-                    }
+                is UserCriteria.LastName.Matches -> {
+                    VPost.author_last_name match userCriteria.regex.pattern
                 }
             }
         }
