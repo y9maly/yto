@@ -17,7 +17,7 @@ dependencies {
     val ktorVersion = "3.4.2"
     implementation("io.ktor:ktor-client-core:$ktorVersion")
 
-    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.01")
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("io.lettuce:lettuce-core:7.5.1.RELEASE")
     implementation("com.nimbusds:nimbus-jose-jwt:10.9")

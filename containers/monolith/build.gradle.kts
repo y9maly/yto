@@ -50,7 +50,7 @@ dependencies {
 
     implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.10.0")
     implementation("ch.qos.logback:logback-classic:1.5.27")
-    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+    implementation("io.github.oshai:kotlin-logging-jvm:8.0.01")
     implementation("org.apache.kafka:kafka-clients:4.2.0")
     implementation("io.github.crackthecodeabhi:kreds:0.9.1")
     implementation("io.lettuce:lettuce-core:7.5.1.RELEASE")

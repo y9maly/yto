@@ -59,9 +59,21 @@ typealias EditMeResult = Union<Unit, EditMeError>
 @S sealed interface EditCoverError {
     @SerialName("InvalidFile")
     @S data object InvalidFile : EditCoverError
+
+    @SerialName("FileTooBigForCover")
+    @S data object FileTooBigForCover : EditCoverError
+
+    @SerialName("UnsupportedFileFormatForCover")
+    @S data object UnsupportedFileFormatForCover : EditCoverError
 }
 
 @S sealed interface EditAvatarError {
     @SerialName("InvalidFile")
     @S data object InvalidFile : EditAvatarError
+
+    @SerialName("FileTooBigForAvatar")
+    @S data object FileTooBigForAvatar : EditAvatarError
+
+    @SerialName("UnsupportedFileFormatForAvatar")
+    @S data object UnsupportedFileFormatForAvatar : EditAvatarError
 }

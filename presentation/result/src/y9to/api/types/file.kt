@@ -10,4 +10,7 @@ import kotlin.jvm.JvmName
 @S sealed interface UploadFileError {
     @SerialName("StorageQuotaExceeded")
     @S data object StorageQuotaExceeded : UploadFileError
+
+    @SerialName("UnknownError")
+    @S data class UnknownError(val message: String?) : UploadFileError
 }

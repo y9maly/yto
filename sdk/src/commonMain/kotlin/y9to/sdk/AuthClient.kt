@@ -111,3 +111,6 @@ class AuthClient internal constructor(
         request { rpc.auth.cancelLogin(token) }
     }
 }
+
+val AuthClient.isAuthenticated get() = authState.map { it is AuthState.Authorized }
+val AuthClient.clientId get() = authState.map { it.idOrNull() }

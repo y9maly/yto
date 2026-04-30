@@ -22,6 +22,7 @@ kotlin {
         api("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
         api(project(":libs:paging:core"))
         implementation(project(":libs:io"))
+        implementation("io.github.oshai:kotlin-logging:8.0.01")
 
         implementation(libs.kotlinx.rpc.krpc.client)
     }

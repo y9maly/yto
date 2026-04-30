@@ -26,6 +26,7 @@ actual suspend fun createSdkClient(
     port: Int,
     path: String,
     kvStorage: KVStorage,
+    clientLogger: ClientLogger,
 ): Client {
     val scope = CoroutineScope(SupervisorJob())
 
@@ -83,5 +84,6 @@ actual suspend fun createSdkClient(
         httpClient = httpClient,
         requestController = requestController,
         rpcController = rpcController,
+        clientLogger = clientLogger,
     )
 }

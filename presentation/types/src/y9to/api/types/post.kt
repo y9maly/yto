@@ -20,8 +20,6 @@ import kotlin.time.Instant
     val publishDate: Instant,
     val lastEditDate: Instant?,
     val content: PostContent,
-    val canEdit: Boolean,
-    val canDelete: Boolean,
 )
 
 @S sealed interface PostReplyHeader {
