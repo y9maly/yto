@@ -10,6 +10,6 @@ import kotlinx.serialization.Serializable as S
     @SerialName("UserEdited")
     @S data class UserEdited(val user: UserId) : UpdateSubscription
 
-    @SerialName("PostContentEdited")
-    @S data class PostContentEdited(val post: PostId) : UpdateSubscription
+    @SerialName("PostEdited")
+    @S data class PostEdited(val post: PostId) : UpdateSubscription
 }

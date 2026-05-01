@@ -5,10 +5,15 @@ package presentation.presenter
 import presentation.integration.context.Context
 import y9to.api.types.MyProfile
 import y9to.api.types.User
+import y9to.api.types.UserId
+import backend.core.types.UserId as BackendUserId
 import backend.core.types.User as BackendUser
 
 
 interface UserPresenter {
+    context(context: Context)
+    suspend fun UserId(backendUserId: BackendUserId): UserId
+
     context(context: Context)
     suspend fun User(backendUser: BackendUser): User
 
@@ -16,6 +21,9 @@ interface UserPresenter {
     suspend fun MyProfile(backendUser: BackendUser): MyProfile
 }
 
+
+context(_: Context, presenter: UserPresenter)
+suspend fun BackendUserId.map(): UserId = presenter.UserId(this)
 
 context(_: Context, presenter: UserPresenter)
 suspend fun BackendUser.mapAsUser(): User = presenter.User(this)

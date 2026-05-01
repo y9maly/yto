@@ -44,10 +44,11 @@ import kotlin.time.Clock
 internal fun createRpc(
     authenticator: Authenticator,
     tokenProvider: TokenProvider,
-    controller: ControllerCollection
+    controller: ControllerCollection,
+    authService: AuthService,
 ): RpcCollection {
     return RpcCollection(
-        auth = AuthRpcDefault(authenticator, tokenProvider, controller.auth),
+        auth = AuthRpcDefault(authenticator, tokenProvider, controller.auth, { authService.createSession() }),
         user = UserRpcDefault(authenticator, controller.user),
         post = PostRpcDefault(authenticator, controller.post),
         file = FileRpcDefault(authenticator, controller.file),

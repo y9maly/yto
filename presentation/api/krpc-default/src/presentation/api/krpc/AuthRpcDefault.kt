@@ -1,5 +1,6 @@
 package presentation.api.krpc
 
+import backend.core.types.SessionId
 import presentation.api.krpc.internals.authenticate
 import presentation.authenticator.Authenticator
 import presentation.integration.context.Context
@@ -29,12 +30,17 @@ import y9to.common.types.Birthday
 class AuthRpcDefault(
     private val authenticator: Authenticator,
     private val tokenProvider: TokenProvider,
-    private val controller: AuthController
+    private val controller: AuthController,
+    private val sessionCreator: SessionCreator,
 ) : AuthRpc {
+    fun interface SessionCreator {
+        suspend fun create(): backend.core.types.Session
+    }
+
     override suspend fun createSession(): Pair<RefreshToken, Token> {
-        val sessionId = controller.createSession()
-        val (refreshToken, accessToken) = tokenProvider.issueTokens(forSession = sessionId)
-            ?: error("Must be unreachable because session ${sessionId.long} must be exists")
+        val session = sessionCreator.create()
+        val (refreshToken, accessToken) = tokenProvider.issueTokens(forSession = session.id)
+            ?: error("Must be unreachable because session ${session.id.long} must be exists")
         return refreshToken to accessToken
     }
 

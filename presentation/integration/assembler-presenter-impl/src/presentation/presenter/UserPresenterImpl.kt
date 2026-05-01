@@ -7,6 +7,7 @@ import presentation.integration.context.elements.sessionId
 import presentation.mapper.map
 import y9to.api.types.MyProfile
 import y9to.api.types.User
+import y9to.api.types.UserId
 
 
 class UserPresenterImpl(
@@ -14,6 +15,11 @@ class UserPresenterImpl(
     private val service: ServiceCollection,
 ) : UserPresenter {
     private val main by main
+
+    context(context: Context)
+    override suspend fun UserId(backendUserId: backend.core.types.UserId): UserId {
+        return backendUserId.map()
+    }
 
     context(context: Context)
     override suspend fun User(backendUser: backend.core.types.User): User {

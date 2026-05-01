@@ -166,6 +166,7 @@ suspend fun instantiate(
         authenticator = authenticator,
         tokenProvider = tokenProvider,
         controller = controller,
+        authService = service.auth,
     )
 
     return Monolith(

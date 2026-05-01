@@ -3,9 +3,9 @@ package integration.eventCollector
 import domain.event.AuthStateChanged
 import domain.event.Event
 import domain.event.LoginStateChanged
-import domain.event.PostContentEdited
 import domain.event.PostCreated
 import domain.event.PostDeleted
+import domain.event.PostEdited
 import domain.event.SessionCreated
 import domain.event.UserEdited
 import domain.event.UserRegistered
@@ -72,8 +72,8 @@ class KafkaEventCollector(
                 payload = json.encodeToString(event)
             }
 
-            is PostContentEdited -> {
-                topic = "event.post_content_edited"
+            is PostEdited -> {
+                topic = "event.post_edited"
                 key = event.postId.long.toString()
                 payload = json.encodeToString(event)
             }

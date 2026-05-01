@@ -1,6 +1,7 @@
 package y9to.api.controller
 
 import domain.service.ServiceCollection
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -18,6 +19,8 @@ import y9to.api.types.*
 import y9to.libs.paging.*
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
+import y9to.libs.stdlib.optional.Optional
+import y9to.libs.stdlib.optional.map
 import y9to.libs.stdlib.successOrElse
 import domain.service.result.CreatePostError as DomainCreatePostError
 
@@ -27,6 +30,10 @@ class PostControllerDefault(
     override val assembler: AssemblerCollection,
     override val presenter: PresenterCollection,
 ) : PostController, ControllerDefault {
+    companion object {
+        val logger = KotlinLogging.logger { }
+    }
+
     @Serializable
     private data class CursorPayload(
         val feed: InputFeed,
@@ -75,13 +82,64 @@ class PostControllerDefault(
             .successOrElse { error ->
                 return when (error) {
                     DomainCreatePostError.InvalidInputContent -> CreatePostError.InvalidInputContent
-                    DomainCreatePostError.InvalidReplyId -> CreatePostError.InvalidInputReply
+                    DomainCreatePostError.InvalidReplyTo -> CreatePostError.InvalidInputReplyTo
                     DomainCreatePostError.InvalidAuthorId -> CreatePostError.Unauthorized
                     DomainCreatePostError.InvalidInputLocation -> error("Unreachable")
                 }.asError()
             }
 
         return post.map().asOk()
+    }
+
+    context(_: Context)
+    override suspend fun edit(
+        post: InputPost,
+        replyTo: Optional<InputPost?>,
+        content: Optional<InputPostContent>
+    ): EditPostResult = context {
+        val authState = authStateOrPut {
+            service.auth.getAuthState(sessionId)
+                ?: return EditPostError.Unauthorized.asError()
+        }
+
+        val userId = authState.userIdOrNull()
+            ?: return EditPostError.Unauthorized.asError()
+
+        val postId = post.resolve()
+            ?: return EditPostError.InvalidInputPost.asError()
+        val post = service.post.get(postId)
+            ?: return EditPostError.InvalidInputPost.asError()
+
+        if (post.author.id != userId)
+            return EditPostError.AccessDenied.asError()
+
+        val replyTo = replyTo.map { it?.resolve() }
+        val content = content.map { it.map() ?: return EditPostError.InvalidNewInputContent.asError() }
+
+        val result = service.post.edit(
+            post = postId,
+            replyTo = replyTo,
+            content = content,
+        ).successOrElse { error ->
+            return when (error) {
+                domain.service.result.EditPostError.InvalidPostId ->
+                    EditPostError.InvalidInputPost
+
+                domain.service.result.EditPostError.InvalidNewInputContent ->
+                    EditPostError.InvalidNewInputContent
+
+                domain.service.result.EditPostError.InvalidNewReplyTo ->
+                    EditPostError.InvalidNewInputReplyTo
+
+                domain.service.result.EditPostError.InvalidNewAuthorId -> {
+                    val message = "Must be unreachable because we are not trying to change the author here"
+                    logger.error { message }
+                    error(message)
+                }
+            }.asError()
+        }
+
+        result.map().asOk()
     }
 
     context(_: Context)

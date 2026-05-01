@@ -1,5 +1,6 @@
 package presentation.presenter
 
+import backend.core.types.SessionId as BackendSessionId
 import backend.core.types.Session as BackendSession
 import backend.core.types.AuthState as BackendAuthState
 import backend.core.types.LoginState as BackendLoginState
@@ -7,9 +8,13 @@ import presentation.integration.context.Context
 import y9to.api.types.AuthState
 import y9to.api.types.LoginState
 import y9to.api.types.Session
+import y9to.api.types.SessionId
 
 
 interface AuthPresenter {
+    context(context: Context)
+    suspend fun SessionId(backendSessionId: BackendSessionId): SessionId
+
     context(context: Context)
     suspend fun Session(backendSession: BackendSession): Session
 
@@ -19,6 +24,9 @@ interface AuthPresenter {
     context(context: Context)
     suspend fun LoginState(backendLoginState: BackendLoginState): LoginState
 }
+
+context(_: Context, presenter: AuthPresenter)
+suspend fun BackendSessionId.map(): SessionId = presenter.SessionId(this)
 
 context(_: Context, presenter: AuthPresenter)
 suspend fun BackendSession.map(): Session = presenter.Session(this)

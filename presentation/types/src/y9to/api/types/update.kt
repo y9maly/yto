@@ -1,6 +1,7 @@
 package y9to.api.types
 
 import kotlinx.serialization.SerialName
+import y9to.libs.stdlib.optional.Optional
 import kotlinx.serialization.Serializable as S
 
 
@@ -8,8 +9,8 @@ import kotlinx.serialization.Serializable as S
     @SerialName("UserEdited")
     @S data class UserEdited(val user: UserId) : ApiUpdateSubscription
 
-    @SerialName("PostContentEdited")
-    @S data class PostContentEdited(val post: PostId) : ApiUpdateSubscription
+    @SerialName("PostEdited")
+    @S data class PostEdited(val post: PostId) : ApiUpdateSubscription
 }
 
 @S sealed interface Update {
@@ -22,6 +23,11 @@ import kotlinx.serialization.Serializable as S
     @SerialName("UserEdited")
     @S data class UserEdited(val newUser: User) : Update
 
-    @SerialName("PostContentEdited")
-    @S data class PostContentEdited(val post: PostId, val newContent: PostContent) : Update
+    @SerialName("PostEdited")
+    @S data class PostEdited(
+        val post: PostId,
+        val newAuthor: Optional<UserId>,
+        val newReplyTo: Optional<PostId?>,
+        val newContent: Optional<PostContent>,
+    ) : Update
 }

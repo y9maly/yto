@@ -45,5 +45,5 @@ class UpdateControllerDefault(
 context(_: Context, _: AssemblerCollection)
 private suspend fun ApiUpdateSubscription.map(): UpdateSubscription? = when (this) {
     is ApiUpdateSubscription.UserEdited -> UpdateSubscription.UserEdited(user.resolve() ?: return null)
-    is ApiUpdateSubscription.PostContentEdited -> UpdateSubscription.PostContentEdited(post.resolve() ?: return null)
+    is ApiUpdateSubscription.PostEdited -> UpdateSubscription.PostEdited(post.resolve() ?: return null)
 }

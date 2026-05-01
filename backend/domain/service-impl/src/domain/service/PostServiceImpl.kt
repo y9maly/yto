@@ -3,13 +3,17 @@ package domain.service
 import backend.core.types.*
 import domain.event.PostCreated
 import domain.event.PostDeleted
+import domain.event.PostEdited
 import domain.service.result.CreatePostResult
 import domain.service.result.DeletePostResult
+import domain.service.result.EditPostResult
 import domain.service.result.map
 import integration.eventCollector.EventCollector
 import integration.repository.RepositoryCollection
 import integration.repository.PostRepository
 import y9to.libs.paging.*
+import y9to.libs.stdlib.optional.Optional
+import y9to.libs.stdlib.optional.map
 import kotlin.time.Clock
 
 
@@ -45,6 +49,31 @@ class PostServiceImpl(
 
         result.onSuccess { post ->
             eventCollector.emit(PostCreated(post))
+        }
+
+        return result.map()
+    }
+
+    override suspend fun edit(
+        post: PostId,
+        author: Optional<UserId>,
+        replyTo: Optional<PostId?>,
+        content: Optional<InputPostContent>
+    ): EditPostResult {
+        val result = repo.post.edit(
+            post = post,
+            author = author,
+            replyTo = replyTo,
+            content = content.map { it.map() },
+        )
+
+        result.onSuccess { post ->
+            eventCollector.emit(PostEdited(
+                postId = post.id,
+                newAuthor = author,
+                newReplyTo = replyTo,
+                newContent = content.map { post.content },
+            ))
         }
 
         return result.map()

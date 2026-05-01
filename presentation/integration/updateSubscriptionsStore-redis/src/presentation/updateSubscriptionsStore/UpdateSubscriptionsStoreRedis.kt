@@ -53,10 +53,10 @@ class UpdateSubscriptionsStoreRedis(
 
 private fun UpdateEvent.stringId() = when (this) {
     is UpdateEvent.UserEdited -> "user:$user"
-    is UpdateEvent.PostContentEdited -> "post:$post"
+    is UpdateEvent.PostEdited -> "post:$post"
 }
 
 private fun UpdateSubscription.getSubscribedEvents(): Set<UpdateEvent> = when (this) {
     is UpdateSubscription.UserEdited -> setOf(UpdateEvent.UserEdited(user))
-    is UpdateSubscription.PostContentEdited -> setOf(UpdateEvent.PostContentEdited(post))
+    is UpdateSubscription.PostEdited -> setOf(UpdateEvent.PostEdited(post))
 }

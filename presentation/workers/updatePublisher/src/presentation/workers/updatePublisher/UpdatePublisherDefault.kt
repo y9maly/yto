@@ -5,7 +5,7 @@ import backend.core.types.SessionId
 import domain.event.AuthStateChanged
 import domain.event.Event
 import domain.event.LoginStateChanged
-import domain.event.PostContentEdited
+import domain.event.PostEdited
 import domain.event.UserEdited
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
@@ -25,6 +25,7 @@ import presentation.updateProducer.UpdateProducer
 import presentation.updateSubscriptionsStore.UpdateEvent
 import presentation.updateSubscriptionsStore.UpdateSubscriptionsStore
 import y9to.api.types.Update
+import y9to.libs.stdlib.optional.map
 import kotlin.concurrent.atomics.AtomicBoolean
 import kotlin.concurrent.atomics.ExperimentalAtomicApi
 
@@ -91,13 +92,16 @@ private suspend fun UpdatePublisherDefault.startImpl(): Nothing = eventSource.co
             }
         }
 
-        is PostContentEdited -> {
-            updateSubscriptionsStore.getSubscribers(UpdateEvent.PostContentEdited(event.postId)).forEach { subscriber ->
+        is PostEdited -> {
+            updateSubscriptionsStore.getSubscribers(UpdateEvent.PostEdited(event.postId)).forEach { subscriber ->
                 launch {
                     withSession(subscriber) {
                         val postId = event.postId.map()
-                        val newContent = event.newContent.map()
-                        producer.emit(sessionId, Update.PostContentEdited(postId, newContent))
+                        producer.emit(sessionId, Update.PostEdited(postId,
+                            newAuthor = event.newAuthor.map { it.map() },
+                            newReplyTo = event.newReplyTo.map { it?.map() },
+                            newContent = event.newContent.map { it.map() }
+                        ))
                     }
                 }
             }

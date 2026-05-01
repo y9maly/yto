@@ -1,25 +1,11 @@
 package y9to.api.controller
 
-import backend.core.types.SessionId
 import presentation.integration.context.Context
-import y9to.api.types.AuthState
-import y9to.api.types.CheckConfirmCodeResult
-import y9to.api.types.CheckOAuthResult
-import y9to.api.types.CheckPassword2FAResult
-import y9to.api.types.FileId
-import y9to.api.types.LogOutResult
-import y9to.api.types.LoginState
-import y9to.api.types.RegisterResult
-import y9to.api.types.Session
-import y9to.api.types.StartLoginWithEmailResult
-import y9to.api.types.StartLoginWithPhoneNumberResult
-import y9to.api.types.StartLoginWithTelegramOAuthResult
+import y9to.api.types.*
 import y9to.common.types.Birthday
 
 
 interface AuthController {
-    suspend fun createSession(): SessionId
-
     context(_: Context) suspend fun getSession(): Session
     context(_: Context) suspend fun getAuthState(): AuthState
     context(_: Context) suspend fun logOut(): LogOutResult

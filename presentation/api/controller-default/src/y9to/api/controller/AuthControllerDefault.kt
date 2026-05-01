@@ -33,11 +33,6 @@ class AuthControllerDefault(
     override val assembler: AssemblerCollection,
     override val presenter: PresenterCollection,
 ) : AuthController, ControllerDefault {
-    override suspend fun createSession(): backend.core.types.SessionId = context {
-        val session = service.auth.createSession()
-        return session.id
-    }
-
     context(_: Context)
     override suspend fun getSession(): Session = context {
         val session = service.auth.getSession(sessionId)

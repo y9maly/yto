@@ -1,9 +1,11 @@
 package presentation.presenter
 
+import backend.core.types.SessionId
 import domain.service.ServiceCollection
 import presentation.integration.context.Context
 import presentation.integration.context.elements.sessionId
-import presentation.mapper.map
+// todo
+import presentation.mapper.map as mapImpl
 import presentation.presenter.map
 import y9to.api.types.*
 import y9to.api.types.LoginState.Registration
@@ -15,14 +17,19 @@ class AuthPresenterImpl(
     private val service: ServiceCollection,
 ) : AuthPresenter {
     context(context: Context)
+    override suspend fun SessionId(backendSessionId: SessionId): y9to.api.types.SessionId {
+        return backendSessionId.mapImpl()
+    }
+
+    context(context: Context)
     override suspend fun Session(backendSession: BackendSession): Session {
         val isSelf = backendSession.id == sessionId
 
         if (!isSelf)
-            error("Session ${backendSession.id} cannot be present to session $sessionId")
+            error("Session ${backendSession.id} cannot be present for session $sessionId")
 
         return Session(
-            id = backendSession.id.map(),
+            id = backendSession.id.mapImpl(),
             creationDate = backendSession.creationDate,
         )
     }
@@ -30,7 +37,7 @@ class AuthPresenterImpl(
     context(context: Context)
     override suspend fun AuthState(backendAuthState: BackendAuthState): AuthState {
         return when (backendAuthState) {
-            is BackendAuthState.Authorized -> AuthState.Authorized(backendAuthState.id.map())
+            is BackendAuthState.Authorized -> AuthState.Authorized(backendAuthState.id.mapImpl())
             is BackendAuthState.Unauthorized -> AuthState.Unauthorized
         }
     }

@@ -17,6 +17,8 @@ import integration.repository.result.DeletePostError
 import integration.repository.result.DeletePostResult
 import integration.repository.result.CreatePostError
 import integration.repository.result.CreatePostResult
+import integration.repository.result.EditPostError
+import integration.repository.result.EditPostResult
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -30,6 +32,8 @@ import y9to.libs.paging.*
 import y9to.libs.paging.Slice
 import y9to.libs.stdlib.asError
 import y9to.libs.stdlib.asOk
+import y9to.libs.stdlib.optional.Optional
+import y9to.libs.stdlib.optional.onPresent
 import kotlin.time.Instant
 
 
@@ -102,10 +106,10 @@ internal class PostgresPostRepository internal constructor(private val main: Mai
         content: InputPostContent,
     ): CreatePostResult = main.transaction {
         if (!main.user.exists(author))
-            return@transaction CreatePostError.InvalidAuthorLink.asError()
+            return@transaction CreatePostError.InvalidAuthorId.asError()
 
         if (replyTo != null && !exists(replyTo))
-            return@transaction CreatePostError.InvalidReplyToPostLink.asError()
+            return@transaction CreatePostError.InvalidReplyToPostId.asError()
 
         if (location is InputPostLocation.Profile) {
             if (!main.user.exists(location.user))
@@ -142,6 +146,64 @@ internal class PostgresPostRepository internal constructor(private val main: Mai
         }
 
         get(id)!!.asOk()
+    }
+
+    override suspend fun edit(
+        post: PostId,
+        author: Optional<UserId>,
+        replyTo: Optional<PostId?>,
+        content: Optional<InputPostContent>
+    ): EditPostResult = main.transaction {
+        if (!exists(post))
+            return@transaction EditPostError.InvalidPostId.asError()
+
+        author.onPresent { author ->
+            if (!main.user.exists(author))
+                return@transaction EditPostError.InvalidNewAuthorId.asError()
+        }
+
+        replyTo.onPresent { replyTo ->
+            if (replyTo != null) {
+                if (!exists(replyTo))
+                    return@transaction EditPostError.InvalidNewReplyTo.asError()
+            }
+        }
+
+        TPost.update(where = { TPost.id eq post.long }) {
+            author.onPresent { author ->
+                it[this.author] = author.long
+            }
+
+            replyTo.onPresent { replyTo ->
+                it[this.reply_to] = replyTo?.long
+            }
+
+            content.onPresent { content ->
+                it[this.content_type] = content.type
+            }
+        }
+
+        content.onPresent { content ->
+            TPostStandalone.deleteWhere { TPostStandalone.id eq post.long }
+            TPostRepost.deleteWhere { TPostRepost.id eq post.long }
+
+            when (content) {
+                is InputPostContent.Standalone -> TPostStandalone.insert {
+                    it[TPostStandalone.id] = post.long
+                    it[TPostStandalone.text] = content.text
+                }
+
+                is InputPostContent.Repost -> {
+                    TPostRepost.insert {
+                        it[TPostRepost.id] = post.long
+                        it[TPostRepost.comment] = content.comment
+                        it[TPostRepost.original] = content.original.long
+                    }
+                }
+            }
+        }
+
+        get(post)!!.asOk()
     }
 
     override suspend fun delete(post: PostId): DeletePostResult = main.transaction {

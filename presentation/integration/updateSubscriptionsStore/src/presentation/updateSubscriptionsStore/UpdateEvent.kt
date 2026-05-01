@@ -6,5 +6,5 @@ import backend.core.types.UserId
 
 sealed interface UpdateEvent {
     data class UserEdited(val user: UserId) : UpdateEvent
-    data class PostContentEdited(val post: PostId) : UpdateEvent
+    data class PostEdited(val post: PostId) : UpdateEvent
 }
