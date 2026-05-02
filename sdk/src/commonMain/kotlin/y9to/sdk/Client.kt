@@ -15,18 +15,20 @@ class Client internal constructor(
     internal val scope: CoroutineScope,
     internal val kvStorage: KVStorage,
     internal val httpClient: Any,
-    internal val requestController: RequestController,
     internal val rpcController: RpcController,
     private val clientLogger: ClientLogger,
 ) {
+    private val cachedLoggers = mutableMapOf<String, KLogger>()
+
     internal val updateCenter = UpdateCenter(this)
+    internal val requestController = RequestController(scope, kvStorage, rpcController, logger("RequestController"))
 
     val auth = AuthClient(this)
     val user = UserClient(this)
     val post = PostClient(this)
     val file = FileClient(this)
 
-    internal fun logger(componentName: String): KLogger = object : KLogger {
+    internal fun logger(componentName: String): KLogger = cachedLoggers[componentName] ?: object : KLogger {
         override val name = clientLogger.name
 
         override fun isLoggingEnabledFor(level: Level, marker: Marker?): Boolean {
@@ -36,7 +38,7 @@ class Client internal constructor(
         override fun at(level: Level, marker: Marker?, block: KLoggingEventBuilder.() -> Unit) {
             clientLogger.at(componentName, level, marker, block)
         }
-    }
+    }.also { cachedLoggers[componentName] = it }
 }
 
 

@@ -33,11 +33,11 @@ actual class FileClient internal actual constructor(
     override val client: Client,
 ) : ClientOwner {
     actual suspend fun get(id: FileId): File? {
-        return this.request { rpc.file.get(token, id) }
+        return this.request("FileClient#get(id=${id.long})") { rpc.file.get(token, id) }
     }
 
     actual suspend fun download(id: FileId, read: suspend ReadSegmentScope.() -> Unit): Boolean {
-        val source = request { rpc.file.download(token, id) }
+        val source = request("FileClient#download(id=${id.long})") { rpc.file.download(token, id) }
             ?: return false
 
         when (source) {
@@ -53,7 +53,7 @@ actual class FileClient internal actual constructor(
         expectedSize: Long?,
         write: suspend WriteSegmentScope.() -> Unit,
     ): Union<File, UploadFileError> {
-        val sink = request {
+        val sink = request("FileClient#upload") {
             rpc.file.upload(
                 token = token,
                 name = name,
@@ -124,7 +124,7 @@ actual class FileClient internal actual constructor(
             .jsonPrimitive
             .long
 
-        val file = request { rpc.file.get(token, FileId(fileId)) }
+        val file = request("FileClient#uploadHttp: get uploaded file") { rpc.file.get(token, FileId(fileId)) }
             ?: error("Failed to upload file")
 
         return file.asOk()

@@ -69,29 +69,37 @@ class UserClient internal constructor(override val client: Client) : ClientOwner
         .distinctUntilChanged()
         .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
 
+    suspend fun resolve(input: InputUser): UserId? =
+        input as? UserId ?: request("UserClient#resolve(input=$input)") { rpc.user.resolve(token, input) }
+
     suspend fun get(input: InputUser): User? {
-        return request { rpc.user.get(token, input) }
+        return request("UserClient#get(input=$input)") { rpc.user.get(token, input) }
     }
 
     fun getFlow(input: InputUser): Flow<User?> = channelFlow {
-        var user = request { rpc.user.get(token, input) }
+        val userId = resolve(input)
             ?: run {
                 send(null)
                 return@channelFlow
             }
-        send(user)
 
-        client.updateCenter.subscribe(ApiUpdateSubscription.UserEdited(user.id))
+        val updates = client.updateCenter.saveIn(this)
+        client.updateCenter.subscribe(ApiUpdateSubscription.UserEdited(userId))
 
         try {
-            client.updateCenter.updates.filterIsInstance<Update.UserEdited>().collect { update ->
-                if (update.newUser.id != user.id)
+            var user = get(input)
+            send(user)
+
+            updates.filterIsInstance<Update.UserEdited>().collect { update ->
+                if (update.newUser.id != userId)
+                    return@collect
+                if (update.newUser == user)
                     return@collect
                 user = update.newUser
                 send(user)
             }
         } finally {
-            client.updateCenter.unsubscribe(ApiUpdateSubscription.UserEdited(user.id))
+            client.updateCenter.unsubscribe(ApiUpdateSubscription.UserEdited(userId))
         }
     }
 
@@ -114,7 +122,7 @@ class UserClient internal constructor(override val client: Client) : ClientOwner
             return EditMeError.NothingToChange.asError()
         }
 
-        return request {
+        return request("UserClient#editMe") {
             rpc.user.editMe(
                 token = token,
                 firstName = firstName,

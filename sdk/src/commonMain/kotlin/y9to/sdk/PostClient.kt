@@ -8,12 +8,14 @@ import kotlinx.coroutines.flow.filterIsInstance
 import kotlinx.coroutines.flow.flow
 import y9to.api.types.ApiUpdateSubscription
 import y9to.api.types.CreatePostResult
+import y9to.api.types.DeletePostResult
 import y9to.api.types.EditPostResult
 import y9to.api.types.InputFeed
 import y9to.api.types.InputPost
 import y9to.api.types.InputPostContent
 import y9to.api.types.InputPostLocation
 import y9to.api.types.Post
+import y9to.api.types.PostId
 import y9to.api.types.Update
 import y9to.libs.paging.Cursor
 import y9to.libs.paging.Slice
@@ -25,19 +27,24 @@ import y9to.sdk.internals.request
 
 
 class PostClient internal constructor(override val client: Client) : ClientOwner {
+    suspend fun resolve(input: InputPost): PostId? =
+        input as? PostId ?: request("PostClient#resolve(input=$input)") { rpc.post.resolve(token, input) }
+
     fun getFlow(input: InputPost): Flow<Post?> = channelFlow {
-        var post: Post? = request { rpc.post.get(token, input) }
+        val postId = resolve(input)
             ?: run {
                 send(null)
                 return@channelFlow
             }
-        val postId = post!!.id
-        send(post)
 
+        val updates = client.updateCenter.saveIn(this)
         client.updateCenter.subscribe(ApiUpdateSubscription.PostEdited(postId))
 
         try {
-            client.updateCenter.updates.filterIsInstance<Update.PostEdited>().collect { update ->
+            var post = request("PostClient#getFlow(postId=${postId.long})") { get(postId) }
+            send(post)
+
+            updates.filterIsInstance<Update.PostEdited>().collect { update ->
                 if (post == null) {
                     post = get(postId)
                     return@collect
@@ -45,7 +52,8 @@ class PostClient internal constructor(override val client: Client) : ClientOwner
 
                 if (update.post != postId)
                     return@collect
-                post = post.copy(content = update.newContent)
+                if (update.post == post)
+                    return@collect
 
                 if (update.newAuthor.isPresent || update.newReplyTo.isPresent) {
                     post = get(postId)
@@ -63,7 +71,7 @@ class PostClient internal constructor(override val client: Client) : ClientOwner
     }
 
     suspend fun get(input: InputPost): Post? {
-        return request {
+        return request("PostClient#get(input=$input)") {
             rpc.post.get(token, input)
         }
     }
@@ -73,7 +81,7 @@ class PostClient internal constructor(override val client: Client) : ClientOwner
         replyTo: InputPost? = null,
         content: InputPostContent,
     ): CreatePostResult {
-        return request {
+        return request("PostClient#create") {
             rpc.post.create(
                 token = token,
                 location = location,
@@ -88,7 +96,7 @@ class PostClient internal constructor(override val client: Client) : ClientOwner
         replyTo: Optional<InputPost?>,
         content: Optional<InputPostContent>
     ): EditPostResult {
-        return request { rpc.post.edit(
+        return request("PostClient#edit") { rpc.post.edit(
             token = token,
             post = post,
             replyTo = replyTo,
@@ -96,11 +104,15 @@ class PostClient internal constructor(override val client: Client) : ClientOwner
         ) }
     }
 
+    suspend fun delete(post: InputPost): DeletePostResult {
+        return request("PostClient#delete(input=$post)") { rpc.post.delete(token, post) }
+    }
+
     suspend fun sliceFeed(
         key: SliceKey<InputFeed, Cursor>,
         limit: Int,
     ): Slice<Cursor?, Post> {
-        return request {
+        return request("PostClient#sliceFeed(key=$key)") {
             rpc.post.sliceFeed(
                 token = token,
                 key = key,

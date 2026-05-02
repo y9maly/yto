@@ -18,14 +18,14 @@ class AuthClient internal constructor(
     init {
         client.scope.launch {
             while (true) {
-                session.value = request { rpc.auth.getSession(token) }
+                session.value = request("AuthClient: update session") { rpc.auth.getSession(token) }
                 delay((20000L..30000L).random().milliseconds)
             }
         }
     }
 
     val authState: Flow<AuthState> = channelFlow {
-        send(request { rpc.auth.getAuthState(token) })
+        send(request("AuthClient: get initial auth state") { rpc.auth.getAuthState(token) })
 
         client.updateCenter.updates.filterIsInstance<Update.AuthStateChanged>().collect {
             send(it.authState)
@@ -35,7 +35,7 @@ class AuthClient internal constructor(
         .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
 
     val loginState: Flow<LoginState?> = channelFlow {
-        send(request { rpc.auth.getLoginState(token) })
+        send(request("AuthClient: get initial login state") { rpc.auth.getLoginState(token) })
 
         client.updateCenter.updates.filterIsInstance<Update.LoginStateChanged>().collect {
             send(it.loginState)
@@ -45,33 +45,33 @@ class AuthClient internal constructor(
         .shareIn(client.scope, SharingStarted.WhileSubscribed(5000), 1)
 
     suspend fun logOut(): LogOutResult {
-        return request {
+        return request("AuthClient#logOut") {
             rpc.auth.logOut(token)
         }
     }
 
     suspend fun startLoginWithPhoneNumber(phoneNumber: String): StartLoginWithPhoneNumberResult {
-        return request { rpc.auth.startLoginWithPhoneNumber(token, phoneNumber) }
+        return request("AuthClient#startLoginWithPhoneNumber(phoneNumber=$phoneNumber)") { rpc.auth.startLoginWithPhoneNumber(token, phoneNumber) }
     }
 
     suspend fun startLoginWithEmail(email: String): StartLoginWithEmailResult {
-        return request { rpc.auth.startLoginWithEmail(token, email) }
+        return request("AuthClient#startLoginWithEmail(email=$email)") { rpc.auth.startLoginWithEmail(token, email) }
     }
 
     suspend fun startLoginWithTelegramOAuth(requestPhoneNumber: Boolean): StartLoginWithTelegramOAuthResult {
-        return request { rpc.auth.startLoginWithTelegramOAuth(token, requestPhoneNumber) }
+        return request("AuthClient#startLoginWithTelegramOAuth(requestPhoneNumber=$requestPhoneNumber)") { rpc.auth.startLoginWithTelegramOAuth(token, requestPhoneNumber) }
     }
 
     suspend fun checkConfirmCode(code: String): CheckConfirmCodeResult {
-        return request { rpc.auth.checkConfirmCode(token, code) }
+        return request("AuthClient#checkConfirmCode(code=$code)") { rpc.auth.checkConfirmCode(token, code) }
     }
 
     suspend fun checkPassword2FA(password: String): CheckPassword2FAResult {
-        return request { rpc.auth.checkPassword2FA(token, password) }
+        return request("AuthClient#checkPassword2FA") { rpc.auth.checkPassword2FA(token, password) }
     }
 
     suspend fun checkOAuth(authorizationCode: String, authorizationState: String): CheckOAuthResult {
-        return request { rpc.auth.checkOAuth(
+        return request("AuthClient#checkOAuth") { rpc.auth.checkOAuth(
             token = token,
             authorizationCode = authorizationCode,
             authorizationState = authorizationState
@@ -94,7 +94,7 @@ class AuthClient internal constructor(
         linkPhoneNumber: Boolean,
         linkEmail: Boolean,
     ): RegisterResult {
-        return request { rpc.auth.register(
+        return request("AuthClient#register") { rpc.auth.register(
             token = token,
             firstName = firstName,
             lastName = lastName,
@@ -108,7 +108,7 @@ class AuthClient internal constructor(
     }
 
     suspend fun cancelLogin() {
-        request { rpc.auth.cancelLogin(token) }
+        request("AuthClient#cancelLogin") { rpc.auth.cancelLogin(token) }
     }
 }
 

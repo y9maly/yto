@@ -9,6 +9,7 @@ import presentation.integration.context.Context
 import presentation.integration.context.elements.authStateOrPut
 import presentation.integration.context.elements.sessionId
 import presentation.presenter.PresenterCollection
+import presentation.presenter.map
 import presentation.presenter.mapAsMyProfile
 import presentation.presenter.mapAsUser
 import y9to.api.types.*
@@ -31,6 +32,11 @@ class UserControllerDefault(
         }.userIdOrNull() ?: return null
         val user = service.user.get(userId) ?: return null
         return user.mapAsMyProfile()
+    }
+
+    context(_: Context)
+    override suspend fun resolve(input: InputUser): UserId? = context {
+        return input.resolve()?.map()
     }
 
     context(_: Context)

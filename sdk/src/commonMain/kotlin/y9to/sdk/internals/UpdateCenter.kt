@@ -1,11 +1,14 @@
 package y9to.sdk.internals
 
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.produceIn
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -19,21 +22,39 @@ import kotlin.time.Duration.Companion.milliseconds
 internal class UpdateCenter(
     override val client: Client,
 ) : ClientOwner {
+    val logger = client.logger("UpdateCenter")
+
     private val _updates = MutableSharedFlow<Update>(extraBufferCapacity = Int.MAX_VALUE)
     val updates = _updates.asSharedFlow()
+
+    /**
+     * Eagerly starts listening to the [UpdateCenter.updates] in the provided [scope] and buffers updates.
+     * Returned Flow can only be collected once.
+     *
+     * ```Kotlin
+     * val savedFlow = MutableSharedFlow(extraBufferCapacity = Int.MAV_VALUE)
+     * [scope].launch {
+     *     [UpdateCenter.updates].collect { savedFlow.emit(it) }
+     * }
+     * return savedFlow
+     * ```
+     */
+    fun saveIn(scope: CoroutineScope) =
+        updates.produceIn(scope).receiveAsFlow()
 
     init {
         client.scope.launch {
             while (true) {
                 try {
-                    request {
+                    request("UpdateCenter#receive", true) {
                         rpc.update.receive(token).collect {
+                            logger.trace { "Update received: $it" }
                             preUpdate(it)
                             check(_updates.tryEmit(it))
                         }
                     }
                 } catch (e: Exception) {
-                    e.printStackTrace()
+                    logger.error(e) { "Failed to receive update" }
                     delay(1000.milliseconds)
                     continue
                 }
@@ -53,7 +74,7 @@ internal class UpdateCenter(
     }
 
     init {
-        subscriptionsApiCommands.consumeAsFlow().collectIn(client.scope) { command ->
+        subscriptionsApiCommands.receiveAsFlow().collectIn(client.scope) { command ->
             while (true) {
                 try {
                     when (command) {
@@ -72,7 +93,7 @@ internal class UpdateCenter(
                             if (hasApiSubscription)
                                 break
 
-                            request { rpc.update.subscribe(token, command.subscription) }
+                            request("UpdateCenter#subscribe(${command.subscription})") { rpc.update.subscribe(token, command.subscription) }
                             apiSubscriptionsMutex.withLock {
                                 apiSubscriptions.add(command.subscription)
                             }
@@ -93,7 +114,7 @@ internal class UpdateCenter(
                             if (!hasApiSubscription)
                                 break
 
-                            request { rpc.update.unsubscribe(token, command.subscription) }
+                            request("UpdateCenter#unsubscribe(${command.subscription})") { rpc.update.unsubscribe(token, command.subscription) }
                             apiSubscriptionsMutex.withLock {
                                 apiSubscriptions.remove(command.subscription)
                             }
@@ -101,9 +122,9 @@ internal class UpdateCenter(
                     }
 
                     break
-                } catch (e: Exception) {
-                    if (e is CancellationException) throw e
-                    e.printStackTrace()
+                } catch (t: Throwable) {
+                    logger.error(t) { "Failed to execute update command $command: ${t.message}" }
+                    if (t is CancellationException) throw t
                     delay(1000.milliseconds)
                 }
             }

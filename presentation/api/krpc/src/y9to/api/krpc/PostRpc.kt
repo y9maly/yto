@@ -12,6 +12,8 @@ import y9to.libs.stdlib.optional.none
 
 @Rpc
 interface PostRpc {
+    suspend fun resolve(token: Token, input: InputPost): PostId?
+
     suspend fun get(token: Token, input: InputPost): Post?
 
     suspend fun create(
@@ -27,6 +29,8 @@ interface PostRpc {
         replyTo: Optional<InputPost?> = none(),
         content: Optional<InputPostContent> = none(),
     ): EditPostResult
+
+    suspend fun delete(token: Token, post: InputPost): DeletePostResult
 
     suspend fun sliceFeed(
         token: Token,

@@ -10,6 +10,7 @@ import kotlin.jvm.JvmName
 
 typealias CreatePostResult = Union<CreatePostOk, CreatePostError>
 typealias EditPostResult = Union<EditPostOk, EditPostError>
+typealias DeletePostResult = Union<Unit, DeletePostError>
 
 
 typealias EditPostOk = Post
@@ -42,4 +43,15 @@ typealias CreatePostOk = Post
 
     @SerialName("InvalidNewInputContent")
     @S data object InvalidNewInputContent : EditPostError
+}
+
+@S sealed interface DeletePostError {
+    @SerialName("Unauthorized")
+    @S data object Unauthorized : DeletePostError
+
+    @SerialName("AccessDenied")
+    @S data object AccessDenied : DeletePostError
+
+    @SerialName("InvalidInputPost")
+    @S data object InvalidInputPost : DeletePostError
 }

@@ -1,5 +1,9 @@
 package y9to.sdk
 
+import io.github.oshai.kotlinlogging.KLogger
+import io.github.oshai.kotlinlogging.KLoggingEventBuilder
+import io.github.oshai.kotlinlogging.Level
+import io.github.oshai.kotlinlogging.Marker
 import io.ktor.client.*
 import io.ktor.client.engine.HttpClientEngineConfig
 import io.ktor.client.engine.HttpClientEngineFactory
@@ -54,6 +58,17 @@ actual suspend fun createSdkClient(
                 }
             }
         },
+        logger = object : KLogger {
+            override val name = clientLogger.name
+
+            override fun isLoggingEnabledFor(level: Level, marker: Marker?): Boolean {
+                return clientLogger.isLoggingEnabledFor("RpcClientController", level, marker)
+            }
+
+            override fun at(level: Level, marker: Marker?, block: KLoggingEventBuilder.() -> Unit) {
+                clientLogger.at("RpcClientController", level, marker, block)
+            }
+        }
     )
 
     val rpcController = RpcController(
@@ -66,23 +81,20 @@ actual suspend fun createSdkClient(
             val (refreshToken, accessToken) = rpcController.awaitRpc().auth.createSession()
             kvStorage.put(REFRESH_TOKEN_KEY, refreshToken.string)
             kvStorage.put(ACCESS_TOKEN_KEY, accessToken.string)
-        } catch (e: Exception) {
-            e.printStackTrace()
+        } catch (t: Throwable) {
+            clientLogger.at("Initializer", Level.ERROR) {
+                message = "Failed to create initial token pair. Retrying in 1 second."
+                cause = t
+            }
+
             delay(1000.milliseconds)
         }
     }
-
-    val requestController = RequestController(
-        scope = scope,
-        kvStorage = kvStorage,
-        rpcController = rpcController,
-    )
 
     return Client(
         scope = scope,
         kvStorage = kvStorage,
         httpClient = httpClient,
-        requestController = requestController,
         rpcController = rpcController,
         clientLogger = clientLogger,
     )

@@ -16,6 +16,9 @@ class PostRpcDefault(
     private val authenticator: Authenticator,
     private val controller: PostController
 ) : PostRpc {
+    override suspend fun resolve(token: Token, input: InputPost) =
+        authenticate(token) { resolve(input) }
+
     override suspend fun get(token: Token, input: InputPost) =
         authenticate(token) { get(input) }
 
@@ -32,6 +35,9 @@ class PostRpcDefault(
         replyTo: Optional<InputPost?>,
         content: Optional<InputPostContent>
     ) = authenticate(token) { edit(post, replyTo, content) }
+
+    override suspend fun delete(token: Token, post: InputPost) =
+        authenticate(token) { delete(post) }
 
     override suspend fun sliceFeed(
         token: Token,

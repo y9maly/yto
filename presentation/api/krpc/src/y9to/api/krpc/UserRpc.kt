@@ -11,6 +11,8 @@ import y9to.libs.stdlib.optional.none
 interface UserRpc {
     suspend fun getMyProfile(token: Token): MyProfile?
 
+    suspend fun resolve(token: Token, input: InputUser): UserId?
+
     suspend fun get(token: Token, input: InputUser): User?
 
     suspend fun editMe(

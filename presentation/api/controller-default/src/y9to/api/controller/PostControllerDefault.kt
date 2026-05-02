@@ -41,6 +41,11 @@ class PostControllerDefault(
     )
 
     context(_: Context)
+    override suspend fun resolve(input: InputPost): PostId? = context {
+        return input.resolve()?.map()
+    }
+
+    context(_: Context)
     override suspend fun get(input: InputPost): Post? = context {
         val postId = input.resolve() ?: return null
         val post = service.post.get(postId) ?: return null
@@ -140,6 +145,35 @@ class PostControllerDefault(
         }
 
         result.map().asOk()
+    }
+
+    context(_: Context)
+    override suspend fun delete(post: InputPost): DeletePostResult = context {
+        val authState = authStateOrPut {
+            service.auth.getAuthState(sessionId)
+                ?: return DeletePostError.Unauthorized.asError()
+        }
+
+        val userId = authState.userIdOrNull()
+            ?: return DeletePostError.Unauthorized.asError()
+
+        val postId = post.resolve()
+            ?: return DeletePostError.InvalidInputPost.asError()
+        val post = service.post.get(postId)
+            ?: return DeletePostError.InvalidInputPost.asError()
+
+        if (post.author.id != userId)
+            return DeletePostError.AccessDenied.asError()
+
+        service.post.delete(postId)
+            .successOrElse { error ->
+                return when (error) {
+                    is domain.service.result.DeletePostError.InvalidPostId ->
+                        DeletePostError.InvalidInputPost
+                }.asError()
+            }
+
+        Unit.asOk()
     }
 
     context(_: Context)

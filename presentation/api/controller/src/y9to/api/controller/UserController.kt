@@ -5,8 +5,8 @@ import y9to.api.types.EditMeResult
 import y9to.api.types.FileId
 import y9to.api.types.InputUser
 import y9to.api.types.MyProfile
-import y9to.api.types.Token
 import y9to.api.types.User
+import y9to.api.types.UserId
 import y9to.common.types.Birthday
 import y9to.libs.stdlib.optional.Optional
 import y9to.libs.stdlib.optional.none
@@ -14,6 +14,8 @@ import y9to.libs.stdlib.optional.none
 
 interface UserController {
     context(_: Context) suspend fun getMyProfile(): MyProfile? // null if unauthenticated
+
+    context(_: Context) suspend fun resolve(input: InputUser): UserId?
 
     context(_: Context) suspend fun get(input: InputUser): User?
 

@@ -17,6 +17,9 @@ class UserRpcDefault(
     override suspend fun getMyProfile(token: Token): MyProfile? =
         authenticate(token) { getMyProfile() }
 
+    override suspend fun resolve(token: Token, input: InputUser) =
+        authenticate(token) { resolve(input) }
+
     override suspend fun get(token: Token, input: InputUser) =
         authenticate(token) { get(input) }
 

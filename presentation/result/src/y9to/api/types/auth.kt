@@ -43,6 +43,7 @@ typealias RegisterResult = Union<Unit, RegisterError>
     @S data object InvalidEmail : StartLoginWithEmailError
 }
 
+@SerialName("StartLoginWithOAuthError")
 @S sealed interface StartLoginWithOAuthError :
     StartLoginWithTelegramOAuthError
 {
@@ -60,6 +61,7 @@ typealias RegisterResult = Union<Unit, RegisterError>
 
 // ------ ------ ------
 
+@SerialName("ContinueLoginError")
 @S sealed interface ContinueLoginError :
     CheckConfirmCodeError,
     CheckPassword2FAError,

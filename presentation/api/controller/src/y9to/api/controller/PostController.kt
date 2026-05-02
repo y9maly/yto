@@ -12,6 +12,8 @@ import y9to.libs.stdlib.optional.none
 
 
 interface PostController {
+    context(_: Context) suspend fun resolve(input: InputPost): PostId?
+
     context(_: Context) suspend fun get(input: InputPost): Post?
 
     context(_: Context) suspend fun create(
@@ -25,6 +27,8 @@ interface PostController {
         replyTo: Optional<InputPost?> = none(),
         content: Optional<InputPostContent> = none(),
     ): EditPostResult
+
+    context(_: Context) suspend fun delete(post: InputPost): DeletePostResult
 
     context(_: Context) suspend fun sliceFeed(
         key: SliceKey<InputFeed, Cursor>,

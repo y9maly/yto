@@ -1,5 +1,6 @@
 package y9to.sdk.internals
 
+import io.github.oshai.kotlinlogging.KLogger
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,6 +26,7 @@ internal class RequestController(
     private val scope: CoroutineScope,
     private val kvStorage: KVStorage,
     private val rpcController: RpcController,
+    private val logger: KLogger,
 ) {
     private val _accessToken = MutableStateFlow<Token?>(null)
     val accessToken = _accessToken.asStateFlow()
@@ -45,9 +47,10 @@ internal class RequestController(
                 val (newRefreshToken, newAccessToken) = rpc.auth.refreshTokens(oldRefreshToken)
                     ?: TODO("Invalid or revoked old refresh token")
 
+                logger.trace { "New access/refresh token pair released" }
+                _accessToken.value = newAccessToken
                 kvStorage.put(REFRESH_TOKEN_KEY, newRefreshToken.string)
                 kvStorage.put(ACCESS_TOKEN_KEY, newAccessToken.string)
-                _accessToken.value = newAccessToken
 
                 // debounce
                 delay(1000.milliseconds)
@@ -57,6 +60,7 @@ internal class RequestController(
 
     fun invalidateAccessToken() {
         _accessToken.value = null
+        logger.trace { "Access token marked as invalid" }
     }
 }
 
